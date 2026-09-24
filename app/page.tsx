@@ -3,9 +3,13 @@ import Link from "next/link";
 import RetryButton from "./components/retry-button";
 import Catalogue from "./components/catalogue";
 import { getProducts } from "@/lib/products";
+import { getDisplayFont } from "@/lib/site-settings";
 
 async function ProductCollection() {
-  const result = await getProducts();
+  const [result, displayFont] = await Promise.all([
+    getProducts(),
+    getDisplayFont(),
+  ]);
   if (result.error !== null)
     return (
       <main className="service-state">
@@ -18,7 +22,11 @@ async function ProductCollection() {
         <RetryButton />
       </main>
     );
-  return <Catalogue products={result.data} />;
+  return (
+    <div className="catalogue-shell" data-display-font={displayFont}>
+      <Catalogue products={result.data} />
+    </div>
+  );
 }
 
 export default function Home() {

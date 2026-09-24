@@ -6,6 +6,12 @@
   --cream: #f7f4ef;
   --font-body: Arial, sans-serif;
 }
+.catalogue-shell[data-display-font="georgia"] {
+  --font-display: Georgia, "Times New Roman", serif;
+}
+.catalogue-shell[data-display-font="dm-sans"] {
+  --font-display: var(--font-body), Arial, sans-serif;
+}
 * {
   box-sizing: border-box;
 }
