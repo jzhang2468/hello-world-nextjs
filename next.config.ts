@@ -1,7 +1,12 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  experimental: {
+    serverActions: {
+      // Allow a 3 MB profile photo plus multipart form overhead.
+      bodySizeLimit: "4mb",
+    },
+  },
 };
 
 export default nextConfig;

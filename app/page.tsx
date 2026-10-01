@@ -4,11 +4,13 @@ import RetryButton from "./components/retry-button";
 import Catalogue from "./components/catalogue";
 import { getProducts } from "@/lib/products";
 import { getDisplayFont } from "@/lib/site-settings";
+import { getAuthContext } from "@/lib/auth";
 
 async function ProductCollection() {
-  const [result, displayFont] = await Promise.all([
+  const [result, displayFont, { user }] = await Promise.all([
     getProducts(),
     getDisplayFont(),
+    getAuthContext(),
   ]);
   if (result.error !== null)
     return (
@@ -24,7 +26,7 @@ async function ProductCollection() {
     );
   return (
     <div className="catalogue-shell" data-display-font={displayFont}>
-      <Catalogue products={result.data} />
+      <Catalogue products={result.data} signedIn={Boolean(user)} />
     </div>
   );
 }

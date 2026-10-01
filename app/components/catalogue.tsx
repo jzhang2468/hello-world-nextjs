@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useRef, useState } from "react";
 import type { Product } from "@/lib/product-types";
 
@@ -50,7 +51,7 @@ const money = (price: number) =>
     maximumFractionDigits: 0,
   }).format(price);
 
-export default function Catalogue({ products }: { products: Product[] }) {
+export default function Catalogue({ products, signedIn = false }: { products: Product[]; signedIn?: boolean }) {
   const [category, setCategory] = useState("All pieces");
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState("featured");
@@ -123,12 +124,20 @@ export default function Catalogue({ products }: { products: Product[] }) {
           <a href="#our-story" onClick={() => setMenuOpen(false)}>
             Our story
           </a>
+          <Link href="/members" onClick={() => setMenuOpen(false)}>
+            FurFrame Club
+          </Link>
         </nav>
         <a className="wordmark" href="#top" aria-label="FurFrame Studio home">
           FurFrame <span>Studio</span>
           <sup>®</sup>
         </a>
-        <a
+        <div className="catalogue-account-actions">
+          <Link className="catalogue-profile-link" href={signedIn ? "/profile" : "/login"}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden="true"><circle cx="12" cy="8" r="3.5" /><path d="M5 21v-2a7 7 0 0 1 14 0v2" /></svg>
+            <span>{signedIn ? "My profile" : "Sign in"}</span>
+          </Link>
+          <a
           href="#collection"
           className="saved-button"
           onClick={() => {
@@ -144,7 +153,8 @@ export default function Catalogue({ products }: { products: Product[] }) {
         >
           <Icon name="heart" filled={savedOnly} />
           <span>Saved ({saved.length})</span>
-        </a>
+          </a>
+        </div>
       </header>
       <main id="top">
         <section className="hero" aria-labelledby="hero-title">
@@ -372,6 +382,11 @@ export default function Catalogue({ products }: { products: Product[] }) {
             <span />
             <span />
           </div>
+        </section>
+        <section className="catalogue-club-invite" aria-labelledby="catalogue-club-title">
+          <span className="catalogue-club-star" aria-hidden="true">✳</span>
+          <div><p className="eyebrow">FOR THE DOGS. AND THEIR PEOPLE.</p><h2 id="catalogue-club-title">Good company looks good on you.</h2><p>{signedIn ? "Your little corner of FurFrame is ready when you are." : "Meet FurFrame Club. A little members-only space for our people."}</p></div>
+          <Link className="black-button" href="/members">{signedIn ? "Enter the Club" : "Sign in to the Club"}<Icon name="arrow" /></Link>
         </section>
       </main>
       <footer>
