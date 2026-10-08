@@ -16,7 +16,7 @@ export default async function ProfilePage() {
         <div className="account-page-heading">
           <p className="eyebrow"><span className="tiny-star" aria-hidden="true">✳</span> YOUR LITTLE CORNER OF FURFRAME</p>
           <h1>{complete ? "Hello, good company." : "Make yourself at home."}</h1>
-          <p>{complete ? "A familiar name. A friendly face. A profile that’s all you." : "First, tell us your name. Then you’re ready to join the Club."}</p>
+          <p>{complete ? "A familiar name. A friendly face. A profile that’s all you." : "First, tell us your name. Then we’ll take you to Caption Club."}</p>
         </div>
         <ProfileForm profile={profile} avatarUrl={avatarUrl} email={user.email ?? ""} complete={complete} />
       </main>

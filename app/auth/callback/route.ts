@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
         .select("id, first_name, last_name, avatar_path")
         .eq("id", data.user.id)
         .maybeSingle<Profile>();
-      const destination = isProfileComplete(profile) ? "/members" : "/profile";
+      const destination = isProfileComplete(profile) ? "/captions" : "/profile";
       return applyCookies(NextResponse.redirect(new URL(destination, origin), 303));
     }
   }

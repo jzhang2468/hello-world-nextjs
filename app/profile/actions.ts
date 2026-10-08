@@ -3,10 +3,13 @@
 import { randomUUID } from "node:crypto";
 import sharp from "sharp";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import {
   MAX_AVATAR_BYTES,
   MAX_NAME_LENGTH,
+  isProfileComplete,
+  type Profile,
   type ProfileFormState,
 } from "@/lib/profile-types";
 
@@ -55,9 +58,9 @@ export async function saveProfile(
 
   const { data: existing, error: readError } = await supabase
     .from("profiles")
-    .select("avatar_path")
+    .select("id, first_name, last_name, avatar_path")
     .eq("id", user.id)
-    .single<{ avatar_path: string | null }>();
+    .single<Profile>();
   if (readError || !existing) {
     return { error: "Your profile is not ready yet. Please refresh and try again." };
   }
@@ -119,5 +122,6 @@ export async function saveProfile(
     await supabase.storage.from("avatars").remove([existing.avatar_path]);
   }
   revalidatePath("/", "layout");
-  return { success: "Your profile is saved. You’re ready to explore FurFrame Club." };
+  if (!isProfileComplete(existing)) redirect("/captions");
+  return { success: "Your profile is saved." };
 }

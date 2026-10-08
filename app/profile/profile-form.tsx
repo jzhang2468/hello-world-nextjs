@@ -40,7 +40,7 @@ export default function ProfileForm({ profile, avatarUrl, email, complete }: { p
     <div className="profile-layout">
       <form className="profile-card" action={formAction} aria-label="Edit your profile">
         <div className="profile-card-heading"><span className="eyebrow">01 / MY PROFILE</span><span className="private-badge">Just for you</span></div>
-        {!complete && !state.success && <p className="onboarding-note">One last hello: add your first and last name to enter FurFrame Club. Your photo is optional.</p>}
+        {!complete && !state.success && <p className="onboarding-note">One last hello: add your first and last name to continue to Caption Club. Your photo is optional.</p>}
         <div className="profile-photo-section">
           <div className="profile-avatar">
             {image ? <Image src={image} alt="Your profile photo" fill unoptimized sizes="108px" /> : <span aria-hidden="true">{initials}</span>}
@@ -79,15 +79,15 @@ export default function ProfileForm({ profile, avatarUrl, email, complete }: { p
         <div className="profile-email"><span>Connected with Google</span><p>{email}</p><small>Your sign-in email stays with your Google account.</small></div>
         <div className="profile-form-bottom">
           <div className="profile-feedback" aria-live="polite">{state.error && <p className="form-feedback is-error" role="alert">{state.error}</p>}{state.success && <p className="form-feedback is-success" role="status">{state.success}</p>}</div>
-          <button className="black-button" disabled={pending || Boolean(photoError)} type="submit">{pending ? "Saving your profile…" : "Save profile"}<span aria-hidden="true">{pending ? "·" : "↗"}</span></button>
+          <button className="black-button" disabled={pending || Boolean(photoError)} type="submit">{pending ? "Saving your profile…" : complete ? "Save profile" : "Save & continue"}<span aria-hidden="true">{pending ? "·" : "↗"}</span></button>
         </div>
       </form>
       <aside className="profile-club-card" aria-labelledby="profile-club-title">
         <div className="club-card-star" aria-hidden="true">✳</div>
-        <span className="eyebrow">A PLACE FOR OUR PEOPLE</span>
-        <h2 id="profile-club-title">You’re our<br />kind of person.</h2>
-        <p>Good dogs, thoughtful details, and a little inspiration for your next walk. There’s good company on the other side.</p>
-        {ready ? <Link className="black-button" href="/members">Enter FurFrame Club <span aria-hidden="true">→</span></Link> : <p className="profile-club-locked">Save your name to enter the Club <span aria-hidden="true">↗</span></p>}
+        <span className="eyebrow">THE FURFRAME CAPTION CLUB</span>
+        <h2 id="profile-club-title">Your pet.<br />The main character.</h2>
+        <p>Bring a favourite photo, find its perfect caption, and vote for the ones that make you smile.</p>
+        {ready ? <Link className="black-button" href="/captions">Go to Caption Club <span aria-hidden="true">→</span></Link> : <p className="profile-club-locked">Save your name to start making captions <span aria-hidden="true">↗</span></p>}
         <span className="profile-club-caption">FOR EVERY KIND OF GOOD DOG.</span>
       </aside>
     </div>

@@ -27,7 +27,7 @@ function GoogleIcon() {
 
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
   const [{ user, profile }, params] = await Promise.all([getAuthContext(), searchParams]);
-  if (user) redirect(isProfileComplete(profile) ? "/members" : "/profile");
+  if (user) redirect(isProfileComplete(profile) ? "/captions" : "/profile");
   const error = params.error ? loginErrors[params.error] : undefined;
 
   return (
@@ -35,7 +35,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
       <main className="login-main">
         <div className="login-editorial">
           <Image src="/images/pink-vest-walk.jpg" alt="A dog in a pink cotton vest, ready for a walk" fill priority sizes="(max-width: 760px) 100vw, 50vw" />
-          <div className="login-image-title"><span className="eyebrow">THE FURFRAME CLUB</span><p>Good dogs.<br />Good company.</p></div>
+          <div className="login-image-title"><span className="eyebrow">THE FURFRAME CAPTION CLUB</span><p>Good dogs.<br />Good company.</p></div>
           <span className="login-image-stamp" aria-hidden="true">✳</span>
           <span className="login-image-note">LIFE IS BETTER TOGETHER.</span>
         </div>
@@ -45,14 +45,14 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           <p className="account-intro">A place for you, your best friend, and the everyday adventures in between.</p>
           <div className="login-benefits">
             <div><span aria-hidden="true">01</span><p><strong>Make it yours.</strong> Create your profile and add a photo.</p></div>
-            <div><span aria-hidden="true">02</span><p><strong>Join the good company.</strong> Explore our members-only Club page.</p></div>
+            <div><span aria-hidden="true">02</span><p><strong>Make your photos even cuter.</strong> Generate captions and vote on your favourites.</p></div>
           </div>
           {error && <p className="form-feedback is-error" role="alert">{error}</p>}
           <form action="/auth/sign-in" method="post">
             <button className="google-button" type="submit"><GoogleIcon /> Continue with Google <span aria-hidden="true">↗</span></button>
           </form>
-          <p className="login-fineprint">New here? Your account is created when you first sign in.</p>
-          <Link className="text-link" href="/#collection">Just browsing? Explore the collection <span aria-hidden="true">→</span></Link>
+          <p className="login-fineprint">You’ll return to Caption Club after signing in. New here? Add your name once to get started.</p>
+          <Link className="text-link" href="/captions">Back to Caption Club <span aria-hidden="true">→</span></Link>
         </section>
       </main>
     </AccountShell>

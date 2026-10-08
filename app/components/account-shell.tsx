@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { getDisplayFont } from "@/lib/site-settings";
+import SiteHeader, { type HeaderPage } from "./site-header";
 
 export function ArrowIcon() {
   return (
@@ -26,24 +27,13 @@ export default async function AccountShell({
 }: {
   children: ReactNode;
   signedIn?: boolean;
-  current?: "profile" | "members" | "login";
+  current?: HeaderPage;
 }) {
   const displayFont = await getDisplayFont();
 
   return (
     <div className="catalogue-shell account-shell" data-display-font={displayFont}>
-      <div className="announcement">FOR THE DOGS. AND THEIR PEOPLE. <span>A little place for good company.</span></div>
-      <header className="account-header">
-        <Link className="wordmark" href="/" aria-label="FurFrame Studio home">FurFrame <span>Studio</span><sup>®</sup></Link>
-        <nav aria-label="Main navigation">
-          <Link href="/#collection">The collection</Link>
-          <Link href="/members" aria-current={current === "members" ? "page" : undefined}>FurFrame Club</Link>
-          <Link className="account-nav-link" href={signedIn ? "/profile" : "/login"} aria-current={current === "profile" || current === "login" ? "page" : undefined}>
-            {signedIn ? "My profile" : "Sign in"}
-          </Link>
-          {signedIn && <form action="/auth/sign-out" method="post"><button className="sign-out-button" type="submit">Sign out</button></form>}
-        </nav>
-      </header>
+      <SiteHeader signedIn={signedIn} current={current} />
       {children}
       <footer className="account-footer">
         <p>A little more colour. A little more joy.</p>

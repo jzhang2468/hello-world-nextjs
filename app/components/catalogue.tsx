@@ -4,12 +4,13 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRef, useState } from "react";
 import type { Product } from "@/lib/product-types";
+import SiteHeader from "./site-header";
 
 function Icon({
   name,
   filled = false,
 }: {
-  name: "heart" | "arrow" | "search" | "close" | "menu";
+  name: "heart" | "arrow" | "search" | "close";
   filled?: boolean;
 }) {
   return (
@@ -39,7 +40,6 @@ function Icon({
         </>
       )}
       {name === "close" && <path d="m6 6 12 12M18 6 6 18" />}
-      {name === "menu" && <path d="M4 7h16M4 12h16M4 17h16" />}
     </svg>
   );
 }
@@ -57,7 +57,6 @@ export default function Catalogue({ products, signedIn = false }: { products: Pr
   const [sort, setSort] = useState("featured");
   const [saved, setSaved] = useState<number[]>([]);
   const [savedOnly, setSavedOnly] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
   const [selected, setSelected] = useState<Product | null>(null);
   const dialog = useRef<HTMLDialogElement>(null);
   const toggleSave = (id: number) =>
@@ -95,67 +94,7 @@ export default function Catalogue({ products, signedIn = false }: { products: Pr
 
   return (
     <>
-      <div className="announcement">
-        FOR THE DOGS. AND THEIR PEOPLE.{" "}
-        <span>Everyday essentials, a little less ordinary.</span>
-      </div>
-      <header className="site-header">
-        <button
-          className="icon-button mobile-menu"
-          aria-label="Toggle navigation"
-          aria-expanded={menuOpen}
-          onClick={() => setMenuOpen(!menuOpen)}
-        >
-          <Icon name={menuOpen ? "close" : "menu"} />
-        </button>
-        <nav
-          className={menuOpen ? "header-nav open" : "header-nav"}
-          aria-label="Main navigation"
-        >
-          <a
-            href="#collection"
-            onClick={() => {
-              reset();
-              setMenuOpen(false);
-            }}
-          >
-            The collection
-          </a>
-          <a href="#our-story" onClick={() => setMenuOpen(false)}>
-            Our story
-          </a>
-          <Link href="/members" onClick={() => setMenuOpen(false)}>
-            FurFrame Club
-          </Link>
-        </nav>
-        <a className="wordmark" href="#top" aria-label="FurFrame Studio home">
-          FurFrame <span>Studio</span>
-          <sup>®</sup>
-        </a>
-        <div className="catalogue-account-actions">
-          <Link className="catalogue-profile-link" href={signedIn ? "/profile" : "/login"}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden="true"><circle cx="12" cy="8" r="3.5" /><path d="M5 21v-2a7 7 0 0 1 14 0v2" /></svg>
-            <span>{signedIn ? "My profile" : "Sign in"}</span>
-          </Link>
-          <a
-          href="#collection"
-          className="saved-button"
-          onClick={() => {
-            setSavedOnly(!savedOnly);
-            setCategory("All pieces");
-            setQuery("");
-          }}
-          aria-label={
-            savedOnly
-              ? "Show all products"
-              : `Show saved products, ${saved.length} saved`
-          }
-        >
-          <Icon name="heart" filled={savedOnly} />
-          <span>Saved ({saved.length})</span>
-          </a>
-        </div>
-      </header>
+      <SiteHeader signedIn={signedIn} current="collection" onCollectionNavigate={reset} />
       <main id="top">
         <section className="hero" aria-labelledby="hero-title">
           <div className="hero-copy">
@@ -241,6 +180,19 @@ export default function Catalogue({ products, signedIn = false }: { products: Pr
                 </button>
               ))}
             </div>
+            <button
+              type="button"
+              className="saved-button catalogue-saved-filter"
+              aria-pressed={savedOnly}
+              onClick={() => {
+                setSavedOnly(!savedOnly);
+                setCategory("All pieces");
+                setQuery("");
+              }}
+            >
+              <Icon name="heart" filled={savedOnly} />
+              <span>Saved ({saved.length})</span>
+            </button>
             <label className="search-field">
               <Icon name="search" />
               <input
@@ -385,8 +337,8 @@ export default function Catalogue({ products, signedIn = false }: { products: Pr
         </section>
         <section className="catalogue-club-invite" aria-labelledby="catalogue-club-title">
           <span className="catalogue-club-star" aria-hidden="true">✳</span>
-          <div><p className="eyebrow">FOR THE DOGS. AND THEIR PEOPLE.</p><h2 id="catalogue-club-title">Good company looks good on you.</h2><p>{signedIn ? "Your little corner of FurFrame is ready when you are." : "Meet FurFrame Club. A little members-only space for our people."}</p></div>
-          <Link className="black-button" href="/members">{signedIn ? "Enter the Club" : "Sign in to the Club"}<Icon name="arrow" /></Link>
+          <div><p className="eyebrow">THE FURFRAME CAPTION CLUB</p><h2 id="catalogue-club-title">Cute photos. Cuter captions.</h2><p>Bring a favourite photo of your pet and let the caption fun begin.</p></div>
+          <Link className="black-button" href="/captions">Explore Caption Club<Icon name="arrow" /></Link>
         </section>
       </main>
       <footer>
