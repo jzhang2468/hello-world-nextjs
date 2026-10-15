@@ -324,8 +324,8 @@ try {
   passed("Restrictive guards survive broad legacy policies across profiles, images, captions, votes, and storage");
 
   await db.exec("reset role");
-  const legacyImage = "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee";
-  await db.query("insert into public.caption_images(id,owner_id,image_path,description,status,tone,model,prompt_version) values($1,$2,$3,'Saved before prompt snapshots','ready','deadpan','legacy-model','legacy-version')", [legacyImage, a, `${a}/${legacyImage}.webp`]);
+  const legacyImage = "66fd5765-0fa9-4dd4-a414-b6e767175163";
+  await db.query("insert into public.caption_images(id,owner_id,image_path,description,status,tone,model,prompt_version) values($1,$2,$3,'Saved before prompt snapshots','ready','deadpan','legacy-model','furframe-caption-chain-v1')", [legacyImage, a, `${a}/${legacyImage}.webp`]);
   await db.query("insert into storage.objects(bucket_id,name) values('caption-images',$1)", [`${a}/${legacyImage}.webp`]);
   await db.query("insert into public.captions(image_id,text,position) values($1,'Original one',0),($1,'Original two',1),($1,'Original three',2)", [legacyImage]);
   const legacyCaption = await scalar("select id from public.captions where image_id=$1 and position=0", [legacyImage]);
@@ -339,7 +339,7 @@ try {
   assert.deepEqual(await rows("select public,file_size_limit::int,allowed_mime_types from storage.buckets where id='caption-images'"), [
     { public: false, file_size_limit: 3145728, allowed_mime_types: ["image/webp"] },
   ]);
-  assert.deepEqual(await rows("select status,description,model,prompt_version from public.caption_images where id=$1", [legacyImage]), [{ status: "ready", description: "Saved before prompt snapshots", model: "legacy-model", prompt_version: "legacy-version" }]);
+  assert.deepEqual(await rows("select status,description,model,prompt_version from public.caption_images where id=$1", [legacyImage]), [{ status: "ready", description: "Saved before prompt snapshots", model: "legacy-model", prompt_version: "furframe-caption-chain-v1" }]);
   assert.equal(await scalar("select count(*)::int from public.captions where image_id=$1", [legacyImage]), 3);
   assert.equal(await scalar("select count(*)::int from public.caption_votes where caption_id=$1", [legacyCaption]), 1);
   assert.equal(await scalar("select count(*)::int from public.caption_generation_steps where image_id=$1", [legacyImage]), 0);
@@ -347,6 +347,49 @@ try {
   assert.equal(await scalar("select count(*)::int from private.caption_generation_credentials"), 1);
   await db.exec(await sql("verify-caption-club.sql"));
   passed("Migration and verification SQL rerun cleanly without resetting prices, font, names, captions, votes, or private bucket settings");
+
+  // Exercise the real, narrowly scoped archive migration against synthetic
+  // fixture data. Retain every original field and dependent row for recovery.
+  const beforeImages = await rows("select to_jsonb(i) as row from public.caption_images i order by id");
+  const retainedData = async () => ({
+    captions: await rows("select to_jsonb(c) as row from public.captions c order by id"),
+    votes: await rows("select to_jsonb(v) as row from public.caption_votes v order by id"),
+    prompts: await rows("select to_jsonb(s) as row from public.caption_generation_steps s order by image_id,stage"),
+    storage: await rows("select to_jsonb(o) as row from storage.objects o order by bucket_id,name"),
+  });
+  const beforeRetained = await retainedData();
+  const archive = await sql("archive-legacy-caption.sql");
+  await denied("update public.caption_images set status='archived',error_code=NULL where id=$1", [legacyImage], "23514");
+  await db.exec(archive);
+  await db.exec(archive);
+  await db.exec(migration);
+  assert.deepEqual(await rows("select to_jsonb(i) as row from public.caption_images i order by id"),
+    beforeImages.map(({ row }) => ({ row: row.id === legacyImage
+      ? { ...row, status: "archived", error_code: "MISSING_PROMPT_PROVENANCE" } : row })));
+  assert.deepEqual(await retainedData(), beforeRetained);
+
+  for (const member of [a, b]) {
+    await identity(member);
+    assert.equal(await scalar("select count(*)::int from public.caption_images where status='ready' and id=$1", [legacyImage]), 0);
+    assert.equal(await scalar("select count(*)::int from public.captions where image_id=$1", [legacyImage]), 0);
+    assert.deepEqual(await rows("select * from public.get_caption_vote_totals($1)", [[legacyCaption]]), []);
+    assert.equal((await rows("select * from public.get_top_caption_image_ids(25,0)")).some(row => row.image_id === legacyImage), false);
+    await denied("insert into public.caption_votes(caption_id,user_id,value) values($1,$2,1)", [legacyCaption, member]);
+    await denied("update public.caption_images set status='ready',error_code=NULL where id=$1", [legacyImage]);
+  }
+  await identity(b);
+  assert.equal(await scalar("select count(*)::int from public.caption_images where id=$1", [legacyImage]), 0);
+  assert.equal(await scalar("select count(*)::int from storage.objects where bucket_id='caption-images' and name=$1", [`${a}/${legacyImage}.webp`]), 0);
+  await identity(c);
+  await denied("update public.caption_votes set value=-1 where caption_id=$1", [legacyCaption]);
+
+  // Administrator recovery is reversible without reconstructing any payload.
+  await db.exec("reset role");
+  await db.query("update public.caption_images set status='ready',error_code=NULL where id=$1", [legacyImage]);
+  assert.deepEqual(await rows("select to_jsonb(i) as row from public.caption_images i order by id"), beforeImages);
+  assert.deepEqual(await retainedData(), beforeRetained);
+  await db.exec(archive);
+  passed("Legacy archival is targeted, reversible, idempotent, preserves all original records, and prevents gallery access and new votes");
 
   console.log(JSON.stringify({ result: "passed", engine: "PGlite PostgreSQL with mocked Supabase auth/storage roles", migration: fileURLToPath(new URL("supabase/caption-club.sql", root)), checks }, null, 2));
 } finally {

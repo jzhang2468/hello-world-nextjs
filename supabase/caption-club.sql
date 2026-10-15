@@ -42,7 +42,7 @@ create table if not exists public.caption_images (
   owner_id uuid not null references auth.users(id) on delete cascade,
   image_path text not null unique,
   description text null check (char_length(description) between 1 and 2000),
-  status text not null default 'processing' check (status in ('processing', 'ready', 'failed')),
+  status text not null default 'processing',
   tone text not null check (tone in ('deadpan', 'chaotic', 'wholesome')),
   model text not null check (char_length(model) between 1 and 80),
   prompt_version text not null check (char_length(prompt_version) between 1 and 80),
@@ -50,12 +50,22 @@ create table if not exists public.caption_images (
   created_at timestamptz not null default now(),
   constraint caption_image_path_matches_owner check (
     image_path = owner_id::text || '/' || id::text || '.webp'
-  ),
-  constraint caption_image_state_consistent check (
-    (status = 'processing' and description is null and error_code is null)
-    or (status = 'ready' and description is not null and error_code is null)
-    or (status = 'failed' and description is null and error_code is not null)
   )
+);
+
+-- Apply to existing projects as well as fresh tables. Archiving preserves the
+-- original description/captions/votes while excluding the frame from all ready
+-- feeds and rating policies. Only the database administrator can archive rows.
+alter table public.caption_images drop constraint if exists caption_images_status_check;
+alter table public.caption_images add constraint caption_images_status_check
+  check (status in ('processing', 'ready', 'failed', 'archived'));
+alter table public.caption_images drop constraint if exists caption_image_state_consistent;
+alter table public.caption_images add constraint caption_image_state_consistent check (
+  (status = 'processing' and description is null and error_code is null)
+  or (status = 'ready' and description is not null and error_code is null)
+  or (status = 'failed' and description is null and error_code is not null)
+  or (status = 'archived' and description is not null and error_code is not null
+    and error_code = 'MISSING_PROMPT_PROVENANCE')
 );
 
 create index if not exists caption_images_owner_created_idx

@@ -280,6 +280,12 @@ returning to past results. Whether these improve repeat use should be validated
 with the Feedback Group. These notes record owner feedback; they do not claim
 that an assigned PM has reviewed or approved the release.
 
+The live audit found one pre-v2 frame without its original prompt records. It
+was archived with `supabase/archive-legacy-caption.sql`, so it no longer appears
+in the gallery or accepts votes. Its image, captions, votes, and other history
+are preserved. Missing historical prompts were not reconstructed or represented
+as original requests.
+
 Release verification includes the automated suite, production build, isolated
 PostgreSQL permission scenarios, and an authenticated browser check of real
 generation, a persisted vote, unrelated-photo rejection, and replacement-photo
