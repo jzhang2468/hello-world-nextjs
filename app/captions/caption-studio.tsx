@@ -317,7 +317,11 @@ export default function CaptionStudio({ signedIn, generationConfigured, items, f
 
       <section id="caption-workbench" className={styles.workbench} aria-labelledby="workbench-title">
         <div className={styles.workbenchHeading}><div><p className={styles.eyebrow}>01 / THE PHOTO LAB</p><h2 id="workbench-title">Let’s develop<br />a sense of humour.</h2></div><p>That camera-roll gem deserves<br />a better caption than “mood.”</p></div>
-        <form action={formAction} className={styles.generator} aria-label="Generate captions from a photo" aria-busy={pending || converting}>
+        <form action={formAction} onReset={(event) => {
+          // React resets native controls after an action. Keep the selected tone
+          // in sync with its hint; photo state and the file input clear explicitly.
+          event.preventDefault();
+        }} className={styles.generator} aria-label="Generate captions from a photo" aria-busy={pending || converting}>
           <div className={styles.uploadColumn}>
             <div className={`${styles.dropzone} ${dragging ? styles.dragging : ""} ${preview ? styles.hasPhoto : ""}`} onDragOver={(event) => { event.preventDefault(); if (signedIn && !pending && !converting) setDragging(true); }} onDragLeave={() => setDragging(false)} onDrop={(event) => {
               event.preventDefault(); setDragging(false);
