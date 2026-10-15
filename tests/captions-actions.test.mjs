@@ -129,6 +129,37 @@ test("a provider failure marks the reserved image failed before removing its pri
   assert.equal(events[3].paths[0], events[1].path);
 });
 
+test("a non-pet upload is not published, is cleaned up, and returns the pet-only popup code", async () => {
+  const events = [];
+  const supabase = {
+    auth: { getUser: async () => ({ data: { user: { id: owner } }, error: null }) },
+    rpc: async (name, args) => {
+      assert.notEqual(name, "complete_caption_image");
+      events.push({ name, args });
+      return { error: null };
+    },
+    storage: { from: () => ({
+      upload: async (path) => { events.push({ name: "upload", path }); return { error: null }; },
+      remove: async (paths) => { events.push({ name: "remove", paths }); return { error: null }; },
+    }) },
+  };
+  const actions = actionsFor(supabase, { generateCaptions: async () => {
+    throw new CaptionGenerationError("PET_PHOTO_REQUIRED");
+  } });
+  const form = validForm();
+  // Renaming a non-pet file or claiming a client-side approval cannot bypass
+  // the decision returned by the server's vision request.
+  form.set("is_pet_related", "true");
+  const result = await actions.generateCaptionSet({}, form);
+  assert.equal(result.errorCode, "PET_PHOTO_REQUIRED");
+  assert.match(result.error, /Only pet-related photos can be used to generate captions/);
+  assert.equal(result.success, undefined);
+  assert.equal(result.imageId, undefined);
+  assert.deepEqual(events.map(event => event.name), ["reserve_caption_image", "upload", "fail_caption_image", "remove"]);
+  assert.equal(events[2].args.p_error_code, "PET_PHOTO_REQUIRED");
+  assert.equal(events[3].paths[0], events[1].path);
+});
+
 test("an uncertain save response never deletes an image that already committed successfully", async () => {
   const supabase = {
     auth: { getUser: async () => ({ data: { user: { id: owner } }, error: null }) },

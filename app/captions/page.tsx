@@ -3,7 +3,7 @@ import AccountShell from "../components/account-shell";
 import { getAuthContext } from "@/lib/auth";
 import { getCaptionFeed, getCaptionServiceStatus } from "@/lib/captions";
 import CaptionStudio from "./caption-studio";
-import { captionFeedOptions, getDailyCaptionPrompt } from "@/lib/caption-types";
+import { captionFeedOptions } from "@/lib/caption-types";
 
 export const metadata: Metadata = {
   title: "Caption Club · FurFrame Studio",
@@ -36,7 +36,6 @@ export default async function CaptionsPage({ searchParams }: { searchParams: Pro
         requestedFrameId={options.frameId}
         selectedFrame={feed.selectedFrame}
         selectedFrameError={query.frame && !options.frameId ? "That frame link is not valid. Browse the club below." : feed.selectedFrameError}
-        dailyPrompt={getDailyCaptionPrompt()}
       />
     </AccountShell>
   );

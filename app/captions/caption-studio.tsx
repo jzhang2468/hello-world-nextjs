@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useActionState, useEffect, useRef, useState, useTransition } from "react";
 import { generateCaptionSet, voteOnCaption } from "./actions";
-import { captionFeedHref, captionFrameHref, isCaptionFrameId, CAPTION_PAGE_SIZE, type CaptionCard, type CaptionFeedMode, type CaptionImage, type CaptionTone, type DailyCaptionPrompt, type GenerationState, type VoteResult } from "@/lib/caption-types";
+import { captionFeedHref, captionFrameHref, isCaptionFrameId, CAPTION_PAGE_SIZE, type CaptionCard, type CaptionFeedMode, type CaptionImage, type CaptionTone, type GenerationState, type VoteResult } from "@/lib/caption-types";
 import { CAPTION_PHOTO_ACCEPT, captionPhotoError, isHeicPhoto, prepareCaptionPhoto } from "@/lib/caption-photo-upload";
 import styles from "./captions.module.css";
 
@@ -138,7 +138,7 @@ function ExampleFrames() {
   );
 }
 
-export default function CaptionStudio({ signedIn, generationConfigured, items, feedError, mode, page, hasMore, requestedFrameId, selectedFrame, selectedFrameError, dailyPrompt }: {
+export default function CaptionStudio({ signedIn, generationConfigured, items, feedError, mode, page, hasMore, requestedFrameId, selectedFrame, selectedFrameError }: {
   signedIn: boolean;
   generationConfigured: boolean;
   items: CaptionImage[];
@@ -149,11 +149,11 @@ export default function CaptionStudio({ signedIn, generationConfigured, items, f
   requestedFrameId: string | null;
   selectedFrame: CaptionImage | null;
   selectedFrameError: string | null;
-  dailyPrompt: DailyCaptionPrompt;
 }) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
   const resultRef = useRef<HTMLDivElement>(null);
+  const rejectionDialogRef = useRef<HTMLDialogElement>(null);
   const focusedFrame = useRef<string | null>(null);
   const photoSelection = useRef(0);
   const [photo, setPhoto] = useState<File | null>(null);
@@ -162,9 +162,11 @@ export default function CaptionStudio({ signedIn, generationConfigured, items, f
   const [converting, setConverting] = useState(false);
   const [converted, setConverted] = useState(false);
   const [tone, setTone] = useState<CaptionTone>("deadpan");
-  const [dailyFeedback, setDailyFeedback] = useState("");
+  const [petPhotoRejection, setPetPhotoRejection] = useState<string | null>(null);
+  const [petRejectionDismissed, setPetRejectionDismissed] = useState(false);
   const [dragging, setDragging] = useState(false);
   const [state, formAction, pending] = useActionState<GenerationState, FormData>(async (previous, formData) => {
+    setPetRejectionDismissed(false);
     if (converting) return { error: "Your photo is still being converted. Please wait a moment." };
     if (photoError) return { error: photoError };
     if (!photo) return { error: "Choose a photo first. Every good caption needs a frame." };
@@ -172,7 +174,10 @@ export default function CaptionStudio({ signedIn, generationConfigured, items, f
     formData.set("tone", tone);
     try {
       const next = await generateCaptionSet(previous, formData);
-      if (next.success) {
+      if (next.errorCode === "PET_PHOTO_REQUIRED") {
+        clearPhoto();
+        setPetPhotoRejection(next.error ?? "Only pet-related photos can be used to generate captions. Please choose a photo of your pet or pet-related items.");
+      } else if (next.success) {
         setPhoto(null);
         setPreview(null);
         setConverted(false);
@@ -187,6 +192,10 @@ export default function CaptionStudio({ signedIn, generationConfigured, items, f
 
   useEffect(() => () => { if (preview) URL.revokeObjectURL(preview); }, [preview]);
   useEffect(() => () => { photoSelection.current += 1; }, []);
+  useEffect(() => {
+    const dialog = rejectionDialogRef.current;
+    if (petPhotoRejection && !pending && dialog && !dialog.open) dialog.showModal();
+  }, [petPhotoRejection, pending]);
   useEffect(() => {
     const id = selectedFrame?.id ?? state.imageId;
     if (id && focusedFrame.current !== id) {
@@ -211,6 +220,9 @@ export default function CaptionStudio({ signedIn, generationConfigured, items, f
 
   const visibleItems = selectedFrame ? items.filter((item) => item.id !== selectedFrame.id) : items;
   const chosenTone = TONES.find((option) => option.value === tone)!;
+  // Replacing a rejected photo resolves that photo's warning, not a service or
+  // save failure. Every new submission can still report a fresh rejection.
+  const generationError = state.errorCode === "PET_PHOTO_REQUIRED" && petRejectionDismissed ? undefined : state.error;
 
   function rememberSharedFrame() {
     try {
@@ -218,13 +230,6 @@ export default function CaptionStudio({ signedIn, generationConfigured, items, f
     } catch {
       // Do not block sign-in when browser storage is unavailable.
     }
-  }
-
-  function useDailyMood() {
-    setTone(dailyPrompt.tone);
-    setDailyFeedback(`${dailyPrompt.tone[0].toUpperCase()}${dailyPrompt.tone.slice(1)} selected. Choose a photo whenever you’re ready.`);
-    document.getElementById("caption-workbench")?.scrollIntoView({ behavior: "instant", block: "start" });
-    inputRef.current?.focus();
   }
 
   async function choosePhoto(file?: File) {
@@ -248,6 +253,7 @@ export default function CaptionStudio({ signedIn, generationConfigured, items, f
       setPhoto(prepared);
       setPreview(URL.createObjectURL(prepared));
       setConverted(isHeicPhoto(file));
+      if (state.errorCode === "PET_PHOTO_REQUIRED") setPetRejectionDismissed(true);
     } catch (error) {
       if (photoSelection.current !== selection) return;
       setPhotoError(error instanceof Error ? error.message : "We couldn’t prepare that photo. Please try another.");
@@ -269,6 +275,24 @@ export default function CaptionStudio({ signedIn, generationConfigured, items, f
 
   return (
     <main className={styles.studio}>
+      <dialog ref={rejectionDialogRef} className={styles.petPhotoDialog} role="alertdialog" aria-labelledby="pet-photo-dialog-title" aria-describedby="pet-photo-dialog-message" onClose={() => {
+        setPetPhotoRejection(null);
+        inputRef.current?.focus();
+      }}>
+        <span className={styles.dialogStamp} aria-hidden="true">✳</span>
+        <p className={styles.eyebrow}>THE FURFRAME PHOTO LAB</p>
+        <h2 id="pet-photo-dialog-title">A pet photo, please.</h2>
+        <p id="pet-photo-dialog-message" className={styles.dialogMessage}>{petPhotoRejection}</p>
+        <p className={styles.dialogNote}>Your selected photo has been cleared. Pick a new one to try again.</p>
+        <div className={styles.dialogActions}>
+          <button type="button" className={styles.darkButton} onClick={() => {
+            rejectionDialogRef.current?.close();
+            inputRef.current?.focus();
+            inputRef.current?.click();
+          }}>Choose a pet photo <Arrow diagonal /></button>
+          <button type="button" className={styles.textLink} onClick={() => rejectionDialogRef.current?.close()}>Close</button>
+        </div>
+      </dialog>
       <section className={styles.hero} aria-labelledby="caption-title">
         <div className={styles.heroCopy}>
           <p className={styles.heroEyebrow}><span aria-hidden="true">✳</span> THE FURFRAME CAPTION CLUB</p>
@@ -292,10 +316,6 @@ export default function CaptionStudio({ signedIn, generationConfigured, items, f
       <div className={styles.ticker} aria-hidden="true"><span>TAKE IT LIGHTLY</span><b>✳</b><span>MAKE IT FUNNY</span><b>✳</b><span>PASS IT ON</span><b>✳</b><span>TAKE IT LIGHTLY</span><b>✳</b><span>MAKE IT FUNNY</span></div>
 
       <section id="caption-workbench" className={styles.workbench} aria-labelledby="workbench-title">
-        <aside className={styles.dailyPrompt} aria-labelledby="daily-prompt-title">
-          <div><p className={styles.eyebrow}>TODAY’S LITTLE ASSIGNMENT · <time dateTime={dailyPrompt.dateKey}>{dailyPrompt.dateLabel}</time></p><h3 id="daily-prompt-title">{dailyPrompt.title}</h3><p>{dailyPrompt.idea}</p><span>A fresh idea each day, New York time. Your own photo idea is welcome, too.</span></div>
-          <div className={styles.dailyAction}>{signedIn ? <button type="button" className={styles.textLink} disabled={pending || converting} onClick={useDailyMood}>Try it {dailyPrompt.tone} <Arrow /></button> : <Link href="/login" onClick={rememberSharedFrame} className={styles.textLink}>Sign in & try today’s idea <Arrow /></Link>}<p role="status" aria-live="polite">{dailyFeedback}</p>{signedIn && <Link href={captionFeedHref("top")} className={styles.dailyReturn}>See how the club’s captions are landing ↗</Link>}</div>
-        </aside>
         <div className={styles.workbenchHeading}><div><p className={styles.eyebrow}>01 / THE PHOTO LAB</p><h2 id="workbench-title">Let’s develop<br />a sense of humour.</h2></div><p>That camera-roll gem deserves<br />a better caption than “mood.”</p></div>
         <form action={formAction} className={styles.generator} aria-label="Generate captions from a photo" aria-busy={pending || converting}>
           <div className={styles.uploadColumn}>
@@ -304,10 +324,11 @@ export default function CaptionStudio({ signedIn, generationConfigured, items, f
               if (signedIn && !pending && !converting) void choosePhoto(event.dataTransfer.files[0]);
             }}>
               {preview ? <Image src={preview} alt="Your selected photo, ready for captions" fill unoptimized sizes="(max-width: 760px) 85vw, 38vw" /> : <div className={styles.uploadPlaceholder}><CameraIcon /><p>A little chaos<br />from your camera roll.</p><span>Drop a photo here or choose a file.</span></div>}
-              <input ref={inputRef} id="caption-image" className={styles.fileInput} type="file" name="image" accept={CAPTION_PHOTO_ACCEPT} aria-describedby="caption-file-help caption-file-error caption-conversion-status" disabled={!signedIn || pending || converting} onChange={(event) => { void choosePhoto(event.target.files?.[0]); }} />
+              <input ref={inputRef} id="caption-image" className={styles.fileInput} type="file" name="image" accept={CAPTION_PHOTO_ACCEPT} aria-describedby="caption-pet-help caption-file-help caption-file-error caption-conversion-status" disabled={!signedIn || pending || converting} onChange={(event) => { void choosePhoto(event.target.files?.[0]); }} />
               {signedIn ? <label className={styles.uploadButton} htmlFor="caption-image" aria-disabled={pending || converting}>{converting ? "Preparing your photo…" : photo ? "Choose another photo" : "Choose a photo"}<Arrow diagonal /></label> : <Link className={styles.uploadButton} href="/login" onClick={rememberSharedFrame}>Sign in to add your photo <Arrow diagonal /></Link>}
               <span className={styles.photoCorner} aria-hidden="true">+<span>+</span></span>
             </div>
+            <p id="caption-pet-help" className={styles.petPhotoHint}>Pets and pet-related items only. Think furry friends, favourite toys, or pet gear.</p>
             <div className={styles.fileDetails}><p id="caption-file-help">JPEG, PNG, WEBP, HEIC / HEIF · UP TO 3 MB</p>{photo && <button type="button" onClick={clearPhoto} disabled={pending}>Remove photo ×</button>}</div>
             <p id="caption-conversion-status" className={styles.filename} role="status">{converting ? "Converting your iPhone photo…" : converted ? "HEIC converted to JPEG. Your photo is ready." : ""}</p>
             {photo && <p className={styles.filename}>{photo.name}</p>}
@@ -320,15 +341,15 @@ export default function CaptionStudio({ signedIn, generationConfigured, items, f
               <div className={styles.toneChoices}>{TONES.map((option) => <label key={option.value} className={`${styles.toneChip} ${tone === option.value ? styles.chosenTone : ""}`}><input type="radio" name="tone" value={option.value} checked={tone === option.value} onChange={() => setTone(option.value)} /><span aria-hidden="true">{option.symbol}</span>{option.label}</label>)}</div>
               <p className={styles.toneNote}>{chosenTone.note}</p>
             </fieldset>
-            <div className={styles.processNote}><span aria-hidden="true">↳</span><p>First, AI takes a look at your photo.<br />Then it turns those details into three captions.</p></div>
+            <div className={styles.processNote}><span aria-hidden="true">↳</span><p>First, AI checks for pets or pet-related items.<br />Then it turns those details into three captions.</p></div>
             <p className={styles.sharingNote}>Your photo and captions will be shared with signed-in club members. Only upload photos you have permission to share.</p>
             {!signedIn ? <Link href="/login" onClick={rememberSharedFrame} className={styles.darkButton}>Sign in & join the fun <Arrow diagonal /></Link> : <>
               {!generationConfigured && <p className={styles.unavailableNotice}>The photo lab is taking a short break. You can still explore and rate the club’s captions.</p>}
-              <button className={styles.darkButton} type="submit" disabled={pending || converting || !photo || Boolean(photoError) || !generationConfigured}><span>{converting ? "Preparing your photo…" : pending ? "Developing your captions…" : "Develop my captions"}</span><span className={pending || converting ? styles.workingStar : ""} aria-hidden="true">✳</span></button>
+              <button className={styles.darkButton} type="submit" disabled={pending || converting || !photo || Boolean(photoError) || !generationConfigured}><span>{converting ? "Preparing your photo…" : pending ? "Checking photo & making captions…" : "Develop my captions"}</span><span className={pending || converting ? styles.workingStar : ""} aria-hidden="true">✳</span></button>
             </>}
             <div className={styles.generationFeedback} ref={resultRef} tabIndex={-1} aria-live="polite">
-              {pending && <p>Looking closely. Finding the funny. This can take a moment.</p>}
-              {state.error && !pending && <p className={styles.formError} role="alert">{state.error}</p>}
+              {pending && <p>Checking for a pet or pet-related items before writing your captions. This can take a moment.</p>}
+              {generationError && !pending && <p className={styles.formError} role="alert">{generationError}</p>}
               {state.success && !pending && <p className={styles.formSuccess} role="status">{state.success} <Link href={state.imageId ? captionFrameHref(state.imageId) : "#caption-gallery"}>See your captions ↓</Link></p>}
             </div>
           </div>

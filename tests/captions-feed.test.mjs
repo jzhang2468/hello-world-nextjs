@@ -139,14 +139,3 @@ test("URL options only accept supported modes, bounded pages, and UUID frame IDs
   assert.equal(captionTypes.captionFeedOptions({ page: "999" }).page, 417);
   assert.deepEqual(captionTypes.captionFeedOptions({ view: "javascript:alert(1)", frame: [idFor(1)] }), { mode: "fresh", page: 1, frameId: null });
 });
-
-test("daily ideas stay stable within a New York day and change at local midnight", () => {
-  const morning = captionTypes.getDailyCaptionPrompt(new Date("2026-10-08T04:00:00Z"));
-  const evening = captionTypes.getDailyCaptionPrompt(new Date("2026-10-09T03:59:59Z"));
-  const tomorrow = captionTypes.getDailyCaptionPrompt(new Date("2026-10-09T04:00:00Z"));
-  assert.deepEqual(morning, evening);
-  assert.equal(morning.dateKey, "2026-10-08");
-  assert.notEqual(morning.title, tomorrow.title);
-  assert.equal(tomorrow.dateKey, "2026-10-09");
-  assert.ok(captionTypes.isCaptionTone(morning.tone));
-});

@@ -25,6 +25,7 @@ const generationMessages = {
   GENERATION_TIMEOUT: "That took a little too long. Please try again in a moment.",
   GENERATION_REFUSED: "We could not create captions for this photo. Please try a different image.",
   GENERATION_INVALID_OUTPUT: "The captions did not come out quite right. Please try again in a moment.",
+  PET_PHOTO_REQUIRED: "Only pet-related photos can be used to generate captions. Please choose a photo of your pet or pet-related items.",
 };
 
 export async function generateCaptionSet(
@@ -119,7 +120,10 @@ export async function generateCaptionSet(
       } catch {
         // The original error remains the response; no provider details leak.
       }
-      if (error instanceof CaptionGenerationError) return { error: generationMessages[error.code] };
+      if (error instanceof CaptionGenerationError) return {
+        error: generationMessages[error.code],
+        ...(error.code === "PET_PHOTO_REQUIRED" ? { errorCode: error.code } : {}),
+      };
       return { error: failureCode === "UPLOAD_FAILED" ? "Your photo could not be uploaded. Please try again." : "Your captions could not be saved. Please try again shortly." };
     }
   } catch {

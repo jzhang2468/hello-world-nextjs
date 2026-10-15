@@ -22,28 +22,6 @@ export function captionFrameHref(id: string): string {
   return `/captions?frame=${encodeURIComponent(id)}#frame-${encodeURIComponent(id)}`;
 }
 
-const DAILY_PHOTO_IDEAS: { title: string; idea: string; tone: CaptionTone }[] = [
-  { title: "The dorm-room supervisor", idea: "A pet from home, a plush desk companion, or a sleepy study buddy: who is really in charge of your homework?", tone: "deadpan" },
-  { title: "Small paws, big city", idea: "On your next NYC walk, find a pet-sized moment with main-character energy. Ask before photographing someone else’s animal.", tone: "chaotic" },
-  { title: "A little homesick, a little wholesome", idea: "Choose a pet photo from home that belongs in the family group chat. Give that familiar face a fresh caption.", tone: "wholesome" },
-  { title: "Campus commute, pet edition", idea: "Try a photo of a furry walking buddy, a pet in a carrier, or your loyal plush mascot ready for class.", tone: "deadpan" },
-  { title: "Weekend side quest", idea: "Bring back a pet-friendly snapshot from your weekend wander, or caption the pet who would rather you stayed home.", tone: "chaotic" },
-  { title: "The tiniest New Yorker", idea: "Look for a small companion having a big-city day: a park break, a window seat, or a very serious walk.", tone: "wholesome" },
-  { title: "Sunday reset, questionable effort", idea: "Your pet or plush companion has a busy schedule of doing nothing. Find the photo that proves it.", tone: "deadpan" },
-];
-
-export function getDailyCaptionPrompt(now = new Date()) {
-  const dateKey = new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York", year: "numeric", month: "2-digit", day: "2-digit" }).format(now);
-  const day = (new Date(`${dateKey}T12:00:00Z`).getUTCDay() + 6) % 7;
-  return {
-    ...DAILY_PHOTO_IDEAS[day],
-    dateKey,
-    dateLabel: new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", month: "short", day: "numeric" }).format(now),
-  };
-}
-
-export type DailyCaptionPrompt = ReturnType<typeof getDailyCaptionPrompt>;
-
 export type CaptionCard = {
   id: string;
   text: string;
@@ -72,6 +50,7 @@ export type CaptionFeed = {
 
 export type GenerationState = {
   error?: string;
+  errorCode?: "PET_PHOTO_REQUIRED";
   success?: string;
   imageId?: string;
 };

@@ -50,7 +50,8 @@ select
   (select count(*) from public.products) as preserved_catalogue_rows;
 
 -- One-row live verification summary. Safe to share: counts/booleans only.
--- Historical ready rows may have no prompt snapshots; v2 rows must have both.
+-- Check every ready frame, including historical and current prompt versions.
+-- Missing historical snapshots must be reported, never reconstructed as originals.
 select
   (select count(*) from pg_catalog.pg_class c join pg_catalog.pg_namespace n on n.oid = c.relnamespace
     where n.nspname = 'public' and c.relkind in ('r', 'p') and not c.relrowsecurity) as public_tables_without_rls,
@@ -62,8 +63,8 @@ select
     and (select count(*) from public.captions c where c.image_id = i.id) <> 3) as invalid_ready_caption_sets,
   (select count(*) from public.caption_images i where i.status = 'ready'
     and not exists (select 1 from storage.objects o where o.bucket_id = 'caption-images' and o.name = i.image_path)) as ready_images_missing_storage,
-  (select count(*) from public.caption_images i where i.status = 'ready' and i.prompt_version = 'furframe-caption-chain-v2'
-    and (select count(*) from public.caption_generation_steps s where s.image_id = i.id) <> 2) as v2_ready_images_missing_steps,
+  (select count(*) from public.caption_images i where i.status = 'ready'
+    and (select count(*) from public.caption_generation_steps s where s.image_id = i.id) <> 2) as ready_images_missing_steps,
   (to_regprocedure('public.reserve_caption_image(uuid,text,text,text)') is null
     and to_regprocedure('public.complete_caption_image(uuid,text,text[])') is null
     and to_regprocedure('public.fail_caption_image(uuid,text)') is null

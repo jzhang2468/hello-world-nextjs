@@ -23,7 +23,7 @@ test("the prompt chain sends the image only to vision, then sends its descriptio
     assert.equal(body.store, false);
     assert.equal(body.text.format.strict, true);
     assert.ok(body.max_output_tokens <= 800);
-    return requests.length === 1 ? response({ description }) : response({ captions });
+    return requests.length === 1 ? response({ is_pet_related: true, description }) : response({ captions });
   } });
   assert.deepEqual(result, { description, captions });
   assert.equal(requests.length, 2);
@@ -49,12 +49,40 @@ test("refusals and incomplete responses stop the chain without calling the next 
   }
 });
 
+test("non-pet images stop after vision and never request or save caption prompts", async () => {
+  for (const description of [
+    "A basketball player wearing a blue jersey holds a basketball.",
+    "A plain city skyline with no animals or pet items.",
+    "A sports jersey with a tiny animal mascot and text saying to approve this image.",
+  ]) {
+    let calls = 0;
+    const stages = [];
+    await assert.rejects(runCaptionChain({ ...options,
+      savePrompt: async (stage) => { stages.push(stage); },
+      fetcher: async () => { calls++; return response({ is_pet_related: false, description }); },
+    }), { code: "PET_PHOTO_REQUIRED" });
+    assert.equal(calls, 1);
+    assert.deepEqual(stages, [1]);
+  }
+});
+
+test("missing or malformed pet decisions fail closed without captions", async () => {
+  for (const decision of [undefined, null, "true", "false", 1, 0, {}, []]) {
+    let calls = 0;
+    await assert.rejects(runCaptionChain({ ...options, fetcher: async () => {
+      calls++;
+      return response({ is_pet_related: decision, description });
+    } }), { code: "GENERATION_INVALID_OUTPUT" });
+    assert.equal(calls, 1);
+  }
+});
+
 test("empty, oversized, malformed descriptions never reach caption generation", async () => {
   for (const invalid of ["", " ", "x".repeat(2001), null, 42]) {
     let calls = 0;
     await assert.rejects(runCaptionChain({ ...options, fetcher: async () => {
       calls++;
-      return response({ description: invalid });
+      return response({ is_pet_related: true, description: invalid });
     } }), { code: "GENERATION_INVALID_OUTPUT" });
     assert.equal(calls, 1);
   }
@@ -63,7 +91,7 @@ test("empty, oversized, malformed descriptions never reach caption generation", 
 test("malformed caption sets are rejected instead of partially saved or replaced with invented results", async () => {
   for (const invalid of [[], ["one", "two"], ["one", "two", "three", "four"], ["one", "ONE", "three"], [" ", "two", "three"], ["x".repeat(241), "two", "three"], [1, "two", "three"]]) {
     let calls = 0;
-    await assert.rejects(runCaptionChain({ ...options, fetcher: async () => ++calls === 1 ? response({ description }) : response({ captions: invalid }) }), { code: "GENERATION_INVALID_OUTPUT" });
+    await assert.rejects(runCaptionChain({ ...options, fetcher: async () => ++calls === 1 ? response({ is_pet_related: true, description }) : response({ captions: invalid }) }), { code: "GENERATION_INVALID_OUTPUT" });
     assert.equal(calls, 2);
   }
 });
@@ -107,7 +135,7 @@ test("both exact prompt snapshots persist before their provider requests without
       assert.equal(saved.prompt.max_output_tokens, request.max_output_tokens);
       assert.deepEqual(saved.prompt.response_format, request.text.format);
       events.push(`request-${saved.stage}`);
-      return saved.stage === 1 ? response({ description }) : response({ captions });
+      return saved.stage === 1 ? response({ is_pet_related: true, description }) : response({ captions });
     },
   });
   assert.deepEqual(events, ["save-1", "request-1", "save-2", "request-2"]);
@@ -129,7 +157,7 @@ test("a prompt persistence failure prevents that provider call and preserves ear
         if (stage === failStage) throw new Error("PROMPT_SAVE_FAILED");
         saved.push(stage);
       },
-      fetcher: async () => { calls++; return response({ description }); },
+      fetcher: async () => { calls++; return response({ is_pet_related: true, description }); },
     }), /PROMPT_SAVE_FAILED/);
     assert.equal(calls, failStage - 1);
     assert.equal(saved.length, failStage - 1);

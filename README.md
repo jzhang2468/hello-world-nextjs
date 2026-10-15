@@ -132,7 +132,7 @@ References: [Supabase user profiles and triggers](https://supabase.com/docs/guid
 ## Assignment #4: Caption Club
 
 `/captions` adds a photo-lab experience to the existing FurFrame app. Members can
-upload a photo, choose a humor style, generate three captions, and rate individual
+upload a pet-related photo, choose a humor style, generate three captions, and rate individual
 captions. The public page shows clearly labelled examples; member uploads and
 voting require verified Supabase authentication.
 
@@ -157,8 +157,13 @@ OAuth still uses exactly `/auth/callback`, without custom redirect parameters.
 4. Run `npm run dev -- --port 3007` and review
    [Caption Club locally](http://localhost:3007/captions).
 
-Generation uses two separate server-side Responses API calls. The first describes
-the uploaded image. The second receives only that description and the selected
+Generation uses two separate server-side Responses API calls. The first checks
+that a pet or clearly pet-related care/items are a main visible subject and describes
+the uploaded image. Only an explicit boolean approval proceeds; unrelated photos
+receive a pet-only popup and never reach caption generation or the gallery. Missing
+or malformed decisions fail closed. Rejected private uploads are removed after the
+session is marked failed, while its prompt record and rate-limit accounting remain.
+The second call receives only the approved description and the selected
 tone, and returns three captions as validated structured output. The app does not
 substitute sample captions when generation fails. The model and prompt version
 are recorded with each image session. Before each provider call, the exact
@@ -226,13 +231,12 @@ URL instead of a moving project or branch alias.
 
 ### Product hypotheses and member sharing
 
-FurFrame keeps its pet-photo identity while testing a small daily habit for Sam,
-our Columbia junior persona: a New York-date-based photo idea about pets from
-home, dorm companions, or city walks. The optional idea changes at midnight in
-New York and repeats weekly; its button selects a suggested tone. It does not
-schedule notifications, track a streak, or claim that a user completed it.
-The hypothesis is that a concrete camera-roll idea lowers the effort of returning;
-this is a design choice to validate with users, not recorded PM feedback.
+FurFrame focuses on pet photos from home, everyday companions, and pet-related
+moments for Sam, our Columbia junior persona. The upload flow leads directly to
+photo selection, with no daily-assignment card. A server-side vision check keeps
+new generations relevant to pets. This check uses model judgment and can make
+mistakes; unclear photos are rejected with an invitation to choose a clearer one.
+Existing photos are preserved; this rule applies to new generation attempts.
 
 The member gallery has Fresh, Top, and My frames views with 24-frame pages.
 My frames filters by the authenticated owner in the database before pagination,
@@ -252,7 +256,35 @@ link remembers the validated frame ID in session storage, so the existing
 `/auth/callback` → `/captions` flow can reopen it after sign-in/onboarding. If
 storage is disabled, the user can reopen the same link after signing in.
 
-The intended loop is a daily photo idea → three captions → club voting → copy or
+The intended loop is a pet photo → three captions → club voting → copy or
 share a favorite → return to personal results. Whether Sam returns more often,
 whether captions are worth sharing, and whether this improves on Crackd are
 hypotheses to test. No comparative performance or PM approval is claimed.
+
+## Week 5 iteration
+
+The app keeps the existing Next.js repository, Supabase project, Google login,
+and per-caption voting flow. Changes requested by the project owner are:
+
+- Keep navigation consistent between the collection and Caption Club, remove
+  unused menu entries, and return to Caption Club after sign-in.
+- Accept HEIC/HEIF camera photos through browser conversion.
+- Remove the daily-assignment card and keep the upload flow focused on pets.
+- Reject unrelated photos on the server before caption generation, explain the
+  restriction in a dialog, and let members choose a replacement.
+- Make upload guidance, voting buttons, and saved-vote feedback easier to read
+  and use on narrow screens. A replacement photo clears the old pet warning.
+
+Fresh, Top, and My frames, plus copy/share actions, support finding captions and
+returning to past results. Whether these improve repeat use should be validated
+with the Feedback Group. These notes record owner feedback; they do not claim
+that an assigned PM has reviewed or approved the release.
+
+Release verification includes the automated suite, production build, isolated
+PostgreSQL permission scenarios, and an authenticated browser check of real
+generation, a persisted vote, unrelated-photo rejection, and replacement-photo
+recovery. Run `supabase/verify-caption-club.sql` against the live project as well;
+the isolated permission test does not prove the current live policy settings.
+For each new deployment, verify its exact `/auth/callback` allowlist entry,
+public access without Vercel protection, and authentication before submitting
+the commit-specific `/captions` URL under Week 5.
