@@ -13,6 +13,7 @@ const idFor = (number) => `00000000-0000-4000-8000-${String(number).padStart(12,
 const image = (number, ownerId = owner) => ({
   id: idFor(number), owner_id: ownerId, image_path: `${ownerId}/${idFor(number)}.webp`,
   description: `Photo ${number}`, tone: "deadpan", status: "ready", created_at: new Date(1_800_000_000_000 + number * 1000).toISOString(),
+  admin_edited_at: null,
   captions: [0, 1, 2].map((position) => ({ id: idFor(10000 + number * 3 + position), text: `Caption ${number}.${position}`, position })),
 });
 
@@ -101,16 +102,18 @@ test("Top frames retain database rank order and use a bounded pagination lookahe
 });
 
 test("an older shared frame loads independently of My frames, pagination, or gallery failure", async () => {
-  const shared = image(1, other);
+  const shared = { ...image(1, other), admin_edited_at: "2026-10-21T19:00:00.000Z" };
   const rows = [shared, ...Array.from({ length: 30 }, (_, index) => image(index + 2))];
   for (const failPage of [false, true]) {
     const { getFeed } = fixture({ rows, failPage });
     const result = await getFeed({ mode: "mine", page: 2, frameId: shared.id });
     assert.equal(result.selectedFrame.id, shared.id);
     assert.equal(result.selectedFrame.ownedByMe, false);
+    assert.equal(result.selectedFrame.adminEditedAt, shared.admin_edited_at);
     assert.equal(result.selectedFrameError, null);
     assert.equal(Boolean(result.error), failPage);
     assert.ok(result.items.every((item) => item.ownedByMe));
+    assert.ok(result.items.every((item) => item.adminEditedAt === null));
   }
 });
 

@@ -12,11 +12,12 @@ type ImageRow = {
   description: string;
   tone: CaptionTone;
   created_at: string;
+  admin_edited_at: string | null;
   captions: { id: string; text: string; position: number }[];
 };
 
 type VoteTotal = { caption_id: string; upvotes: number | string; downvotes: number | string };
-const IMAGE_COLUMNS = "id, owner_id, image_path, description, tone, created_at, captions(id, text, position)";
+const IMAGE_COLUMNS = "id, owner_id, image_path, description, tone, created_at, admin_edited_at, captions(id, text, position)";
 const emptyFeed = (): CaptionFeed => ({ items: [], selectedFrame: null, selectedFrameError: null, error: null, hasMore: false });
 
 export async function getCaptionFeed({ mode = "fresh", page = 1, frameId = null }: {
@@ -90,6 +91,7 @@ export async function getCaptionFeed({ mode = "fresh", page = 1, frameId = null 
         description: row.description,
         tone: row.tone,
         createdAt: row.created_at,
+        adminEditedAt: row.admin_edited_at ?? null,
         ownedByMe: row.owner_id === user.id,
         captions: [...row.captions].sort((a, b) => a.position - b.position).map((caption) => ({
           id: caption.id,

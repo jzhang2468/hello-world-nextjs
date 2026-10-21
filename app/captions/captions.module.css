@@ -137,8 +137,11 @@
 .captionPanel { padding: 7px 0; min-width: 0; }
 .captionPanelHeading { display: flex; justify-content: space-between; gap: 15px; align-items: center; }
 .captionPanelHeading .eyebrow { font-size: 8px; letter-spacing: 1.2px; }
+.captionTags { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
 .aiTag { border: 1px solid #4c55445c; border-radius: 20px; font-size: 11px; padding: 4px 7px; white-space: nowrap; }
+.editedTag { border: 1px solid #4c55445c; border-radius: 20px; font-size: 11px; padding: 4px 7px; white-space: nowrap; color: #315544; background: #fffefa80; }
 .captionPanel h3 { font-size: 27px; letter-spacing: -.8px; margin-top: 10px; margin-bottom: 20px; }
+.editNote { font-size: 12px; line-height: 1.6; color: #485852; margin: -10px 0 16px; }
 .ballot { border-top: 1px solid #25282130; padding: 16px 0 14px; transition: background .2s; }
 .ballotText { display: flex; align-items: baseline; gap: 13px; }
 .captionNumber { font-size: 9px; color: #686c5c; font-weight: 600; letter-spacing: .5px; }

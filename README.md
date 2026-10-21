@@ -294,3 +294,22 @@ the isolated permission test does not prove the current live policy settings.
 For each new deployment, verify its exact `/auth/callback` allowlist entry,
 public access without Vercel protection, and authentication before submitting
 the commit-specific `/captions` URL under Week 5.
+
+## Week 6 follow-up
+
+The Week 4 grader reported that Google sign-in reached the old production alias,
+`hello-world-nextjs-gray.vercel.app`, with `bad_oauth_state` and then a 404.
+The production alias was corrected to point to the current application on
+October 21, 2026. The existing `/auth/callback` route handles rejected, missing,
+and expired OAuth responses by returning to `/login?error=callback`, where the
+member can start a new Google sign-in. Regression coverage includes the reported
+`bad_oauth_state` response and an expired code. Each new submission still needs
+its exact callback allowlisted and a live sign-in check.
+
+The separate Week 6 admin migration adds nullable
+`caption_images.admin_edited_at`; apply it before deploying this version of the
+member app. Only media actually edited by an administrator displays an Edited
+badge and explains that preserved ratings may refer to earlier wording. The
+admin migration retains original text in its private edit history. Untouched
+caption sets retain their existing presentation. Next.js and its ESLint config
+are updated together to 16.4.2.

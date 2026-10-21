@@ -36,6 +36,7 @@ export type CaptionImage = {
   description: string;
   tone: CaptionTone;
   createdAt: string;
+  adminEditedAt: string | null;
   ownedByMe: boolean;
   captions: CaptionCard[];
 };

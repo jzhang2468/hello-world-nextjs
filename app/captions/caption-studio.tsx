@@ -113,8 +113,9 @@ function PhotoSet({ item, number, fresh }: { item: CaptionImage; number: number;
         <div className={styles.printBottom}><span>{date}</span><span aria-hidden="true">✳</span><span>{item.tone.toUpperCase()}</span></div>
       </div>
       <div className={styles.captionPanel}>
-        <div className={styles.captionPanelHeading}><span className={styles.eyebrow}>ONE FRAME. THREE TAKES.</span><span className={styles.aiTag}>AI-written</span></div>
+        <div className={styles.captionPanelHeading}><span className={styles.eyebrow}>ONE FRAME. THREE TAKES.</span><div className={styles.captionTags}><span className={styles.aiTag}>AI-written</span>{item.adminEditedAt && <span className={styles.editedTag}>Edited</span>}</div></div>
         <h3>Which one lands?</h3>
+        {item.adminEditedAt && <p className={styles.editNote}>Edited by the club. Ratings may refer to earlier wording.</p>}
         <div>{item.captions.map((caption, index) => <CaptionBallot key={`${caption.id}:${caption.upvotes}:${caption.downvotes}:${caption.myVote}`} caption={caption} number={index + 1} frameId={item.id} />)}</div>
         <div className={styles.frameLink}><Link href={captionFrameHref(item.id)} prefetch={false}>Link to this frame <Arrow diagonal /></Link><span>Photo links open for signed-in members.</span></div>
         <details className={styles.description}><summary>What the AI noticed <span aria-hidden="true">+</span></summary><p>{item.description}</p></details>

@@ -97,8 +97,10 @@ test("OAuth still sends missing or incomplete names to profile onboarding", asyn
 test("denied, missing, or failed OAuth cannot enter Caption Club via the callback", async () => {
   for (const [query, exchangeError, expectedExchanges] of [
     ["?error=access_denied&code=ignored", null, 0],
+    ["?error=bad_oauth_state&error_code=bad_oauth_state&error_description=OAuth+state+has+expired", null, 0],
     ["", null, 0],
     ["?code=invalid", { message: "Invalid code" }, 1],
+    ["?code=expired", { message: "OAuth state has expired" }, 1],
   ]) {
     const { callback, calls } = authRoutes({ exchangeError });
     const response = await callback(new NextRequest(`${origin}/auth/callback${query}`));
