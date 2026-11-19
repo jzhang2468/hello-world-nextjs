@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useActionState, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { generateCaptionSet, voteOnCaption } from "./actions";
 import { createInstagramPhoto, InstagramShare, warmInstagramPhoto } from "./instagram-share";
+import { InstagramProfileSettings } from "./instagram-profile";
 import { captionFeedHref, captionFrameHref, isCaptionFrameId, CAPTION_PAGE_SIZE, type CaptionCard, type CaptionFeedMode, type CaptionImage, type CaptionTone, type GenerationState, type VoteResult } from "@/lib/caption-types";
 import { CAPTION_PHOTO_ACCEPT, captionPhotoError, isHeicPhoto, prepareCaptionPhoto } from "@/lib/caption-photo-upload";
 import styles from "./captions.module.css";
@@ -381,6 +382,7 @@ export default function CaptionStudio({ signedIn, generationConfigured, items, f
 
       <section id="caption-gallery" className={styles.gallery} aria-labelledby="gallery-title">
         <div className={styles.galleryHeading}><div><p className={styles.eyebrow}>02 / THE CONTACT SHEET</p><h2 id="gallery-title">The frames.<br /><span>The funny business.</span></h2></div><div className={styles.galleryNote}><span aria-hidden="true">☺</span><p>Good one? Let them know.<br />Every caption gets its own vote.</p></div></div>
+        {signedIn && <InstagramProfileSettings />}
         {!signedIn && requestedFrameId && <div className={styles.sharedNotice} id={`frame-${requestedFrameId}`}><p>This frame is waiting inside the club. Sign in to see the photo and its captions.</p><Link href="/login" onClick={rememberSharedFrame} className={styles.textLink}>Sign in to view shared frame <Arrow /></Link><span>If this frame doesn’t reopen after sign-in, open the link again.</span></div>}
         {selectedFrameError && <p className={styles.feedError} role="status">{selectedFrameError}</p>}
         {signedIn && selectedFrame && <section className={styles.selectedFrame} aria-label="Selected frame"><p className={styles.eyebrow}>{state.imageId === selectedFrame.id ? "YOUR NEW FRAME" : "THE FRAME YOU OPENED"}</p><PhotoSet item={selectedFrame} number={1} fresh={state.imageId === selectedFrame.id} selected latestUpload={latestUpload} /></section>}

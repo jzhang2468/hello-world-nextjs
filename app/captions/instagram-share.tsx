@@ -1,7 +1,7 @@
 import { useState, type MouseEvent } from "react";
+import { instagramProfileUrl } from "@/lib/instagram-profile";
+import { useInstagramProfile } from "./instagram-profile";
 import styles from "./captions.module.css";
-
-const instagramUrl = "https://www.instagram.com/";
 
 async function jpegFromUpload(source: File): Promise<Blob> {
   const bitmap = await createImageBitmap(source, { imageOrientation: "from-image" });
@@ -84,6 +84,8 @@ const instructions: Record<Exclude<Phase, "closed">, string> = {
 };
 
 export function InstagramShare({ photo, caption }: { photo: InstagramPhoto; caption: string }) {
+  const { username, editProfile } = useInstagramProfile();
+  const profileUrl = username ? instagramProfileUrl(username) : null;
   const [phase, setPhase] = useState<Phase>("closed");
   const [copyStatus, setCopyStatus] = useState("");
   const [downloadStatus, setDownloadStatus] = useState("");
@@ -133,18 +135,28 @@ export function InstagramShare({ photo, caption }: { photo: InstagramPhoto; capt
     }
   }
 
-  async function start(event: MouseEvent<HTMLAnchorElement>) {
+  function prepareDesktopPost() {
+    void copyCaption();
+    void downloadPhoto();
+    setPhase("manual");
+  }
+
+  async function start(event: MouseEvent<HTMLAnchorElement | HTMLButtonElement>) {
     if (event.metaKey || event.ctrlKey || event.altKey || event.shiftKey) return;
     if (busy) {
       event.preventDefault();
       return;
     }
-    void copyCaption();
     if (!hasMobileShare() || (photo.file && !navigator.canShare({ files: [photo.file] }))) {
-      setPhase("manual");
-      void downloadPhoto();
+      if (!profileUrl) {
+        event.preventDefault();
+        editProfile({ mode: "open", preparePost: prepareDesktopPost });
+        return;
+      }
+      prepareDesktopPost();
       return; // The real link opens Instagram in the same user gesture.
     }
+    void copyCaption();
     setDownloadStatus("");
     event.preventDefault();
     if (photo.file) {
@@ -162,17 +174,20 @@ export function InstagramShare({ photo, caption }: { photo: InstagramPhoto; capt
     }
   }
 
+  const warm = () => warmInstagramPhoto(photo);
+  const actionProps = { className: styles.instagramAction, onClick: start, onFocus: warm, onPointerEnter: warm, onPointerDown: warm };
+  const label = <>
+    <svg aria-hidden="true" width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6">
+      <rect x="2" y="2" width="16" height="16" rx="4.5" /><circle cx="10" cy="10" r="3.5" />
+      <circle cx="14.7" cy="5.4" r=".8" fill="currentColor" stroke="none" />
+    </svg>
+    Use on Instagram
+  </>;
   return (
     <>
-      <a className={styles.instagramAction} href={instagramUrl} target="_blank" rel="noopener noreferrer"
-        aria-disabled={busy || undefined} onClick={start} onFocus={() => warmInstagramPhoto(photo)}
-        onPointerEnter={() => warmInstagramPhoto(photo)} onPointerDown={() => warmInstagramPhoto(photo)}>
-        <svg aria-hidden="true" width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6">
-          <rect x="2" y="2" width="16" height="16" rx="4.5" /><circle cx="10" cy="10" r="3.5" />
-          <circle cx="14.7" cy="5.4" r=".8" fill="currentColor" stroke="none" />
-        </svg>
-        Use on Instagram
-      </a>
+      {profileUrl
+        ? <a {...actionProps} aria-disabled={busy || undefined} href={profileUrl} target="_blank" rel="noopener noreferrer">{label}</a>
+        : <button {...actionProps} type="button" disabled={busy}>{label}</button>}
       {phase !== "closed" && (
         <div className={styles.instagramHelp}>
           <p role="status">{copyStatus} {downloadStatus} {instructions[phase]}</p>
@@ -182,7 +197,9 @@ export function InstagramShare({ photo, caption }: { photo: InstagramPhoto; capt
               event.preventDefault();
               void downloadPhoto();
             }}>Save photo (JPG)</a>
-            <a href={instagramUrl} target="_blank" rel="noopener noreferrer">Open Instagram <span aria-hidden="true">↗</span></a>
+            {profileUrl
+              ? <a href={profileUrl} target="_blank" rel="noopener noreferrer">Open @{username} on Instagram <span aria-hidden="true">↗</span></a>
+              : <button type="button" onClick={() => editProfile({ mode: "open" })}>Open Instagram <span aria-hidden="true">↗</span></button>}
           </div>
         </div>
       )}
