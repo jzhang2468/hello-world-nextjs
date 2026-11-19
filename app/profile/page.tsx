@@ -3,6 +3,8 @@ import AccountShell from "../components/account-shell";
 import { requireAuthContext } from "@/lib/auth";
 import { isProfileComplete } from "@/lib/profile-types";
 import ProfileForm from "./profile-form";
+import InstagramProfileForm from "./instagram-profile-form";
+import { getInstagramUsername } from "@/lib/instagram-profile";
 
 export const metadata: Metadata = { title: "My profile · FurFrame Studio" };
 
@@ -19,6 +21,7 @@ export default async function ProfilePage() {
           <p>{complete ? "A familiar name. A friendly face. A profile that’s all you." : "First, tell us your name. Then we’ll take you to Caption Club."}</p>
         </div>
         <ProfileForm profile={profile} avatarUrl={avatarUrl} email={user.email ?? ""} complete={complete} />
+        <InstagramProfileForm key={user.id} username={getInstagramUsername(user.user_metadata)} />
       </main>
     </AccountShell>
   );

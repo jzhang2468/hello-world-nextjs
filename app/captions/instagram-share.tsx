@@ -1,6 +1,6 @@
 import { useState, type MouseEvent } from "react";
-import { instagramProfileUrl } from "@/lib/instagram-profile";
-import { useInstagramProfile } from "./instagram-profile";
+import Link from "next/link";
+import { useInstagramProfileUrl } from "./instagram-profile";
 import styles from "./captions.module.css";
 
 async function jpegFromUpload(source: File): Promise<Blob> {
@@ -84,8 +84,7 @@ const instructions: Record<Exclude<Phase, "closed">, string> = {
 };
 
 export function InstagramShare({ photo, caption }: { photo: InstagramPhoto; caption: string }) {
-  const { username, editProfile } = useInstagramProfile();
-  const profileUrl = username ? instagramProfileUrl(username) : null;
+  const profileUrl = useInstagramProfileUrl();
   const [phase, setPhase] = useState<Phase>("closed");
   const [copyStatus, setCopyStatus] = useState("");
   const [downloadStatus, setDownloadStatus] = useState("");
@@ -135,12 +134,6 @@ export function InstagramShare({ photo, caption }: { photo: InstagramPhoto; capt
     }
   }
 
-  function prepareDesktopPost() {
-    void copyCaption();
-    void downloadPhoto();
-    setPhase("manual");
-  }
-
   async function start(event: MouseEvent<HTMLAnchorElement | HTMLButtonElement>) {
     if (event.metaKey || event.ctrlKey || event.altKey || event.shiftKey) return;
     if (busy) {
@@ -148,13 +141,10 @@ export function InstagramShare({ photo, caption }: { photo: InstagramPhoto; capt
       return;
     }
     if (!hasMobileShare() || (photo.file && !navigator.canShare({ files: [photo.file] }))) {
-      if (!profileUrl) {
-        event.preventDefault();
-        editProfile({ mode: "open", preparePost: prepareDesktopPost });
-        return;
-      }
-      prepareDesktopPost();
-      return; // The real link opens Instagram in the same user gesture.
+      void copyCaption();
+      void downloadPhoto();
+      setPhase("manual");
+      return;
     }
     void copyCaption();
     setDownloadStatus("");
@@ -190,7 +180,7 @@ export function InstagramShare({ photo, caption }: { photo: InstagramPhoto; capt
         : <button {...actionProps} type="button" disabled={busy}>{label}</button>}
       {phase !== "closed" && (
         <div className={styles.instagramHelp}>
-          <p role="status">{copyStatus} {downloadStatus} {instructions[phase]}</p>
+          <p role="status">{copyStatus} {downloadStatus} {phase === "manual" && !profileUrl ? "Add your Instagram profile to open it from Caption Club." : instructions[phase]}</p>
           <div className={styles.instagramLinks}>
             {phase === "ready" && <button type="button" onClick={() => { if (photo.file) void sharePhoto(photo.file); }}>Share photo</button>}
             <a href={photo.href} download onClick={(event) => {
@@ -198,8 +188,8 @@ export function InstagramShare({ photo, caption }: { photo: InstagramPhoto; capt
               void downloadPhoto();
             }}>Save photo (JPG)</a>
             {profileUrl
-              ? <a href={profileUrl} target="_blank" rel="noopener noreferrer">Open @{username} on Instagram <span aria-hidden="true">↗</span></a>
-              : <button type="button" onClick={() => editProfile({ mode: "open" })}>Open Instagram <span aria-hidden="true">↗</span></button>}
+              ? <a href={profileUrl} target="_blank" rel="noopener noreferrer">Open Instagram <span aria-hidden="true">↗</span></a>
+              : <Link href="/profile#instagram">Add Instagram to My Profile</Link>}
           </div>
         </div>
       )}

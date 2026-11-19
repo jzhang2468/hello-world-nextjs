@@ -262,7 +262,7 @@ a reload, the export uses the photo saved in Caption Club. Supported phones
 offer the JPEG through the system share sheet. On desktop the action downloads
 the JPEG and opens the creator’s Instagram profile, where they can start a post
 and paste the caption. Members can enter or change their own Instagram username
-in Caption Club. FurFrame remembers it across devices when they sign in.
+in **My Profile**. FurFrame remembers it across devices when they sign in.
 
 The intended loop is a pet photo → three captions → club voting → copy or
 share a favorite → return to personal results. Whether Sam returns more often,

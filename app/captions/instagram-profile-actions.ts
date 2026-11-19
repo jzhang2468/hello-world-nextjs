@@ -18,6 +18,7 @@ export async function saveInstagramProfile(input: string): Promise<{ username?: 
     if (error || data.user?.id !== user.id || getInstagramUsername(data.user.user_metadata) !== username) {
       return { error: "Couldn’t save your Instagram profile. Please try again." };
     }
+    revalidatePath("/profile");
     revalidatePath("/captions");
     return { username };
   } catch {

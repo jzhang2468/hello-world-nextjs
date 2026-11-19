@@ -61,7 +61,7 @@ test("updating a member's Instagram handle writes only that preference for the a
   assert.equal((await save("https://www.instagram.com/My.New.Pet/")).username, "my.new.pet");
   assert.deepEqual(member.user_metadata, { avatar_url: "original-avatar", [INSTAGRAM_USERNAME_KEY]: "my.new.pet" });
   assert.equal(getInstagramUsername(other.user_metadata), "another.creator");
-  assert.deepEqual(revalidated, ["/captions", "/captions"]);
+  assert.deepEqual(revalidated, ["/profile", "/captions", "/profile", "/captions"]);
 });
 
 test("invalid, signed-out, and failed saves never return a successful update", async () => {

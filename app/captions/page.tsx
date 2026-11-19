@@ -27,7 +27,7 @@ export default async function CaptionsPage({ searchParams }: { searchParams: Pro
 
   return (
     <AccountShell signedIn={Boolean(user)} current="captions">
-      <InstagramProfileProvider key={user?.id ?? "signed-out"} initialUsername={getInstagramUsername(user?.user_metadata)}>
+      <InstagramProfileProvider key={user?.id ?? "signed-out"} username={getInstagramUsername(user?.user_metadata)}>
         <CaptionStudio
           signedIn={Boolean(user)}
           generationConfigured={service.configured}

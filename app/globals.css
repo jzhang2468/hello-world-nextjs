@@ -1466,6 +1466,16 @@ footer > p {
   line-height: 1.5;
   margin-top: 9px;
 }
+.instagram-profile-form {
+  max-width: 660px;
+  margin-top: 26px;
+  scroll-margin-top: 24px;
+}
+.instagram-profile-form .form-field p {
+  color: #595c52;
+  font-size: 12px;
+  line-height: 1.6;
+}
 .profile-form-bottom {
   border-top: 1px solid #eeece6;
   padding-top: 23px;

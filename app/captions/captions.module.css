@@ -312,15 +312,6 @@
 .instagramAction:hover { color: #28151e; text-decoration: underline; text-underline-offset: 4px; }
 .captionActions > button.instagramAction { text-decoration: none; gap: 7px; }
 .captionActions > button.instagramAction:hover { text-decoration: underline; }
-.instagramSettings { max-width: 1320px; margin: 12px auto 0; }
-.instagramSettings button { min-height: 44px; }
-.instagramDialog { background: #fffdf5; }
-.instagramDialog h2 { font-family: var(--font-display), Georgia, serif; font-weight: 400; margin-top: 0; }
-.instagramDialog p { font-size: 14px; line-height: 1.6; margin-top: 12px; }
-.instagramDialog label { display: block; margin-top: 22px; font-size: 13px; font-weight: 600; }
-.instagramDialog input { width: 100%; min-height: 44px; margin-top: 6px; border: 1px solid #73746b; border-radius: 2px; padding: 9px 12px; background: white; font: inherit; }
-.instagramDialog :is(button, a, input):focus-visible { outline: 3px solid #2d6244; outline-offset: 3px; }
-.instagramDialog .darkButton:hover:not(:disabled) { background: #285a3a; }
 .instagramAction[aria-disabled="true"] { opacity: .65; cursor: wait; }
 .instagramHelp { flex-basis: 100%; padding: 12px 14px 3px; margin: 3px 0 5px; border-left: 3px solid #ba748d; background: #f5e4e9; }
 .instagramHelp > p { font-size: 13px; line-height: 1.6; }
