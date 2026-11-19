@@ -19,7 +19,6 @@ export async function saveInstagramProfile(input: string): Promise<{ username?: 
       return { error: "Couldn’t save your Instagram profile. Please try again." };
     }
     revalidatePath("/profile");
-    revalidatePath("/captions");
     return { username };
   } catch {
     return { error: "Couldn’t save your Instagram profile. Please try again." };

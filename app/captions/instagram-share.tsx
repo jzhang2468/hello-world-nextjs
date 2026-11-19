@@ -1,7 +1,7 @@
 import { useState, type MouseEvent } from "react";
-import Link from "next/link";
-import { useInstagramProfileUrl } from "./instagram-profile";
 import styles from "./captions.module.css";
+
+const INSTAGRAM_HOME = "https://www.instagram.com/";
 
 async function jpegFromUpload(source: File): Promise<Blob> {
   const bitmap = await createImageBitmap(source, { imageOrientation: "from-image" });
@@ -71,12 +71,10 @@ export function warmInstagramPhoto(photo: InstagramPhoto) {
   void photo.load().catch(() => {});
 }
 
-type Phase = "closed" | "manual" | "preparing" | "ready" | "sharing" | "handedOff" | "cancelled" | "error";
+type Phase = "closed" | "manual" | "sharing" | "handedOff" | "cancelled" | "error";
 
 const instructions: Record<Exclude<Phase, "closed">, string> = {
   manual: "In Instagram, choose Create, select your photo and paste your caption.",
-  preparing: "Preparing your photo…",
-  ready: "Your photo is ready. Tap Share photo and choose Instagram.",
   sharing: "Choose Instagram in the share menu.",
   handedOff: "Finish your post in the app you chose. If Instagram was missing, save the JPG and open Instagram below.",
   cancelled: "Sharing cancelled. Share again, or save the photo and open Instagram.",
@@ -84,11 +82,9 @@ const instructions: Record<Exclude<Phase, "closed">, string> = {
 };
 
 export function InstagramShare({ photo, caption }: { photo: InstagramPhoto; caption: string }) {
-  const profileUrl = useInstagramProfileUrl();
   const [phase, setPhase] = useState<Phase>("closed");
   const [copyStatus, setCopyStatus] = useState("");
   const [downloadStatus, setDownloadStatus] = useState("");
-  const busy = phase === "sharing" || phase === "preparing";
 
   async function copyCaption() {
     try {
@@ -122,10 +118,6 @@ export function InstagramShare({ photo, caption }: { photo: InstagramPhoto; capt
 
   async function sharePhoto(file: File) {
     try {
-      if (!navigator.canShare({ files: [file] })) {
-        setPhase("manual");
-        return;
-      }
       setPhase("sharing");
       await navigator.share({ files: [file] });
       setPhase("handedOff");
@@ -134,62 +126,37 @@ export function InstagramShare({ photo, caption }: { photo: InstagramPhoto; capt
     }
   }
 
-  async function start(event: MouseEvent<HTMLAnchorElement | HTMLButtonElement>) {
+  function start(event: MouseEvent<HTMLAnchorElement>) {
     if (event.metaKey || event.ctrlKey || event.altKey || event.shiftKey) return;
-    if (busy) {
-      event.preventDefault();
-      return;
-    }
-    if (!hasMobileShare() || (photo.file && !navigator.canShare({ files: [photo.file] }))) {
-      void copyCaption();
-      void downloadPhoto();
-      setPhase("manual");
-      return;
-    }
     void copyCaption();
-    setDownloadStatus("");
-    event.preventDefault();
-    if (photo.file) {
-      await sharePhoto(photo.file);
-      return;
-    }
-    setPhase("preparing");
-    try {
-      const file = await photo.load();
-      // A slow export can outlive the tap that grants permission to share.
-      if (navigator.userActivation?.isActive) await sharePhoto(file);
-      else setPhase(navigator.canShare({ files: [file] }) ? "ready" : "manual");
-    } catch {
-      setPhase("error");
-    }
+    void downloadPhoto();
+    setPhase("manual");
   }
 
   const warm = () => warmInstagramPhoto(photo);
-  const actionProps = { className: styles.instagramAction, onClick: start, onFocus: warm, onPointerEnter: warm, onPointerDown: warm };
-  const label = <>
-    <svg aria-hidden="true" width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6">
-      <rect x="2" y="2" width="16" height="16" rx="4.5" /><circle cx="10" cy="10" r="3.5" />
-      <circle cx="14.7" cy="5.4" r=".8" fill="currentColor" stroke="none" />
-    </svg>
-    Use on Instagram
-  </>;
+
   return (
     <>
-      {profileUrl
-        ? <a {...actionProps} aria-disabled={busy || undefined} href={profileUrl} target="_blank" rel="noopener noreferrer">{label}</a>
-        : <button {...actionProps} type="button" disabled={busy}>{label}</button>}
+      <a className={styles.instagramAction} href={INSTAGRAM_HOME} target="_blank" rel="noopener noreferrer"
+        onClick={start} onFocus={warm} onPointerEnter={warm} onPointerDown={warm}>
+        <svg aria-hidden="true" width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6">
+          <rect x="2" y="2" width="16" height="16" rx="4.5" /><circle cx="10" cy="10" r="3.5" />
+          <circle cx="14.7" cy="5.4" r=".8" fill="currentColor" stroke="none" />
+        </svg>
+        Use on Instagram
+      </a>
       {phase !== "closed" && (
         <div className={styles.instagramHelp}>
-          <p role="status">{copyStatus} {downloadStatus} {phase === "manual" && !profileUrl ? "Add your Instagram profile to open it from Caption Club." : instructions[phase]}</p>
+          <p role="status">{copyStatus} {downloadStatus} {instructions[phase]}</p>
           <div className={styles.instagramLinks}>
-            {phase === "ready" && <button type="button" onClick={() => { if (photo.file) void sharePhoto(photo.file); }}>Share photo</button>}
+            {photo.file && hasMobileShare() && navigator.canShare({ files: [photo.file] }) && (
+              <button type="button" disabled={phase === "sharing"} onClick={() => { if (photo.file) void sharePhoto(photo.file); }}>Share photo</button>
+            )}
             <a href={photo.href} download onClick={(event) => {
               event.preventDefault();
               void downloadPhoto();
             }}>Save photo (JPG)</a>
-            {profileUrl
-              ? <a href={profileUrl} target="_blank" rel="noopener noreferrer">Open Instagram <span aria-hidden="true">↗</span></a>
-              : <Link href="/profile#instagram">Add Instagram to My Profile</Link>}
+            <a href={INSTAGRAM_HOME} target="_blank" rel="noopener noreferrer">Open Instagram <span aria-hidden="true">↗</span></a>
           </div>
         </div>
       )}

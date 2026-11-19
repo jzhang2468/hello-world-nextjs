@@ -17,12 +17,6 @@ export function normalizeInstagramUsername(input: unknown): string | null {
   return reservedPaths.has(username) ? null : username;
 }
 
-export function instagramProfileUrl(username: string): string {
-  const normalized = normalizeInstagramUsername(username);
-  if (!normalized) throw new Error("Invalid Instagram username.");
-  return `https://www.instagram.com/${normalized}/`;
-}
-
 export function getInstagramUsername(metadata: Record<string, unknown> | null | undefined): string | null {
   return normalizeInstagramUsername(metadata?.[INSTAGRAM_USERNAME_KEY]);
 }

@@ -3,8 +3,6 @@ import AccountShell from "../components/account-shell";
 import { getAuthContext } from "@/lib/auth";
 import { getCaptionFeed, getCaptionServiceStatus } from "@/lib/captions";
 import CaptionStudio from "./caption-studio";
-import { InstagramProfileProvider } from "./instagram-profile";
-import { getInstagramUsername } from "@/lib/instagram-profile";
 import { captionFeedOptions } from "@/lib/caption-types";
 
 export const metadata: Metadata = {
@@ -27,20 +25,19 @@ export default async function CaptionsPage({ searchParams }: { searchParams: Pro
 
   return (
     <AccountShell signedIn={Boolean(user)} current="captions">
-      <InstagramProfileProvider key={user?.id ?? "signed-out"} username={getInstagramUsername(user?.user_metadata)}>
-        <CaptionStudio
-          signedIn={Boolean(user)}
-          generationConfigured={service.configured}
-          items={feed.items}
-          feedError={feed.error}
-          mode={options.mode}
-          page={options.page}
-          hasMore={feed.hasMore}
-          requestedFrameId={options.frameId}
-          selectedFrame={feed.selectedFrame}
-          selectedFrameError={query.frame && !options.frameId ? "That frame link is not valid. Browse the club below." : feed.selectedFrameError}
-        />
-      </InstagramProfileProvider>
+      <CaptionStudio
+        key={user?.id ?? "signed-out"}
+        signedIn={Boolean(user)}
+        generationConfigured={service.configured}
+        items={feed.items}
+        feedError={feed.error}
+        mode={options.mode}
+        page={options.page}
+        hasMore={feed.hasMore}
+        requestedFrameId={options.frameId}
+        selectedFrame={feed.selectedFrame}
+        selectedFrameError={query.frame && !options.frameId ? "That frame link is not valid. Browse the club below." : feed.selectedFrameError}
+      />
     </AccountShell>
   );
 }

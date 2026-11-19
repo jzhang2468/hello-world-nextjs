@@ -5,12 +5,11 @@ import vm from "node:vm";
 import ts from "typescript";
 import * as profile from "../lib/instagram-profile.ts";
 
-const { normalizeInstagramUsername, instagramProfileUrl, getInstagramUsername, INSTAGRAM_USERNAME_KEY } = profile;
+const { normalizeInstagramUsername, getInstagramUsername, INSTAGRAM_USERNAME_KEY } = profile;
 
-test("handles and copied profile links resolve to the same canonical Instagram destination", () => {
+test("handles and copied profile links save the same canonical username", () => {
   for (const input of [" Biscuit.Pet_01 ", "@BISCUIT.pet_01", "instagram.com/Biscuit.Pet_01", "https://www.instagram.com/Biscuit.Pet_01/?igsh=abc#bio"]) {
     assert.equal(normalizeInstagramUsername(input), "biscuit.pet_01");
-    assert.equal(instagramProfileUrl(input), "https://www.instagram.com/biscuit.pet_01/");
   }
   assert.equal(normalizeInstagramUsername("a"), "a");
   assert.equal(normalizeInstagramUsername("a".repeat(30)), "a".repeat(30));
@@ -27,7 +26,6 @@ test("rejects malformed handles, non-profile Instagram destinations, and foreign
     assert.equal(normalizeInstagramUsername(input), null, String(input));
   }
   assert.equal(getInstagramUsername({ [INSTAGRAM_USERNAME_KEY]: "https://other.example" }), null);
-  assert.throws(() => instagramProfileUrl("../"), /Invalid Instagram username/);
 });
 
 const source = readFileSync(new URL("../app/captions/instagram-profile-actions.ts", import.meta.url), "utf8");
@@ -61,7 +59,7 @@ test("updating a member's Instagram handle writes only that preference for the a
   assert.equal((await save("https://www.instagram.com/My.New.Pet/")).username, "my.new.pet");
   assert.deepEqual(member.user_metadata, { avatar_url: "original-avatar", [INSTAGRAM_USERNAME_KEY]: "my.new.pet" });
   assert.equal(getInstagramUsername(other.user_metadata), "another.creator");
-  assert.deepEqual(revalidated, ["/profile", "/captions", "/profile", "/captions"]);
+  assert.deepEqual(revalidated, ["/profile", "/profile"]);
 });
 
 test("invalid, signed-out, and failed saves never return a successful update", async () => {

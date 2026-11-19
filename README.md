@@ -257,12 +257,11 @@ link remembers the validated frame ID in session storage, so the existing
 storage is disabled, the user can reopen the same link after signing in.
 
 On their own frames, members can choose **Use on Instagram** beside a caption.
-FurFrame copies the caption and prepares a JPEG from the current upload. After
-a reload, the export uses the photo saved in Caption Club. Supported phones
-offer the JPEG through the system share sheet. On desktop the action downloads
-the JPEG and opens the creator’s Instagram profile, where they can start a post
-and paste the caption. Members can enter or change their own Instagram username
-in **My Profile**. FurFrame remembers it across devices when they sign in.
+The link opens the Instagram homepage in a new tab while FurFrame copies the
+caption and downloads a JPEG from the current upload. After a reload, the
+export uses the photo saved in Caption Club. Members can choose Create in
+Instagram, select the image and paste the caption. Supported phones can also
+send the prepared JPEG through the system share sheet using **Share photo**.
 
 The intended loop is a pet photo → three captions → club voting → copy or
 share a favorite → return to personal results. Whether Sam returns more often,

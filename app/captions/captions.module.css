@@ -310,9 +310,6 @@
 .captionActions > span:empty { display: none; }
 .instagramAction { display: inline-flex; align-items: center; gap: 7px; min-height: 44px; padding: 5px 10px; color: #55223a; font-size: 12px; font-weight: 650; }
 .instagramAction:hover { color: #28151e; text-decoration: underline; text-underline-offset: 4px; }
-.captionActions > button.instagramAction { text-decoration: none; gap: 7px; }
-.captionActions > button.instagramAction:hover { text-decoration: underline; }
-.instagramAction[aria-disabled="true"] { opacity: .65; cursor: wait; }
 .instagramHelp { flex-basis: 100%; padding: 12px 14px 3px; margin: 3px 0 5px; border-left: 3px solid #ba748d; background: #f5e4e9; }
 .instagramHelp > p { font-size: 13px; line-height: 1.6; }
 .instagramLinks { display: flex; flex-wrap: wrap; align-items: center; column-gap: 18px; }

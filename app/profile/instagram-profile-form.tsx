@@ -37,7 +37,7 @@ export default function InstagramProfileForm({ username }: { username: string | 
         <input id="instagram-username" autoComplete="off" autoCapitalize="none" spellCheck={false} placeholder="@username"
           value={draft} maxLength={512} required disabled={pending} aria-describedby="instagram-hint" aria-invalid={Boolean(error)}
           onChange={(event) => { setDraft(event.target.value); setError(""); setSaved(false); }} />
-        <p id="instagram-hint">Caption Club opens this profile when you choose Open Instagram.</p>
+        <p id="instagram-hint">Optional. This username is saved to your FurFrame profile.</p>
       </div>
       <div className="profile-form-bottom">
         <div className="profile-feedback" aria-live="polite">
