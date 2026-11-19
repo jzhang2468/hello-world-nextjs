@@ -256,6 +256,13 @@ link remembers the validated frame ID in session storage, so the existing
 `/auth/callback` → `/captions` flow can reopen it after sign-in/onboarding. If
 storage is disabled, the user can reopen the same link after signing in.
 
+On their own frames, members can choose **Use on Instagram** beside a caption.
+FurFrame copies the caption and prepares a JPEG from the current upload. After
+a reload, the export uses the photo saved in Caption Club. Supported phones
+offer the JPEG through the system share sheet. On desktop the action downloads
+the JPEG and opens Instagram, where the creator selects the photo and pastes
+the caption before publishing.
+
 The intended loop is a pet photo → three captions → club voting → copy or
 share a favorite → return to personal results. Whether Sam returns more often,
 whether captions are worth sharing, and whether this improves on Crackd are

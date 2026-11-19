@@ -308,6 +308,13 @@
 .captionActions > button:disabled { opacity: .6; cursor: wait; }
 .captionActions > span { flex-basis: 100%; font-size: 12px; line-height: 1.6; color: #245735; }
 .captionActions > span:empty { display: none; }
+.instagramAction { display: inline-flex; align-items: center; gap: 7px; min-height: 44px; padding: 5px 10px; color: #55223a; font-size: 12px; font-weight: 650; }
+.instagramAction:hover { color: #28151e; text-decoration: underline; text-underline-offset: 4px; }
+.instagramAction[aria-disabled="true"] { opacity: .65; cursor: wait; }
+.instagramHelp { flex-basis: 100%; padding: 12px 14px 3px; margin: 3px 0 5px; border-left: 3px solid #ba748d; background: #f5e4e9; }
+.instagramHelp > p { font-size: 13px; line-height: 1.6; }
+.instagramLinks { display: flex; flex-wrap: wrap; align-items: center; column-gap: 18px; }
+.instagramLinks > :is(a, button) { display: inline-flex; align-items: center; gap: 5px; min-height: 44px; font-size: 12px; font-weight: 600; text-decoration: underline; text-underline-offset: 4px; }
 .frameLink { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 15px; padding: 10px 0 15px; }
 .frameLink > a { font-size: 12px; min-height: 44px; display: inline-flex; align-items: center; gap: 8px; text-decoration: underline; text-underline-offset: 4px; }
 .frameLink > span { font-size: 12px; line-height: 1.5; color: #485852; }

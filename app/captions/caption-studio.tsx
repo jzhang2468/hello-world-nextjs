@@ -3,8 +3,9 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useActionState, useEffect, useRef, useState, useTransition } from "react";
+import { useActionState, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { generateCaptionSet, voteOnCaption } from "./actions";
+import { createInstagramPhoto, InstagramShare, warmInstagramPhoto } from "./instagram-share";
 import { captionFeedHref, captionFrameHref, isCaptionFrameId, CAPTION_PAGE_SIZE, type CaptionCard, type CaptionFeedMode, type CaptionImage, type CaptionTone, type GenerationState, type VoteResult } from "@/lib/caption-types";
 import { CAPTION_PHOTO_ACCEPT, captionPhotoError, isHeicPhoto, prepareCaptionPhoto } from "@/lib/caption-photo-upload";
 import styles from "./captions.module.css";
@@ -27,7 +28,12 @@ function LaughIcon({ down = false }: { down?: boolean }) {
   return <svg aria-hidden="true" width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"><circle cx="10" cy="10" r="8" /><path d="M7 7h.01M13 7h.01" strokeWidth="2.5" /><path d={down ? "M6.8 12h6.4" : "M6 11.5c.5 2 2 3 4 3s3.5-1 4-3"} /></svg>;
 }
 
-function CaptionBallot({ caption, number, frameId }: { caption: CaptionCard; number: number; frameId: string }) {
+function CaptionBallot({ caption, number, frameId, instagramPhoto }: {
+  caption: CaptionCard;
+  number: number;
+  frameId: string;
+  instagramPhoto: ReturnType<typeof createInstagramPhoto> | null;
+}) {
   const [result, setResult] = useState<VoteResult>({});
   const [shareFeedback, setShareFeedback] = useState("");
   const [sharing, setSharing] = useState(false);
@@ -97,13 +103,23 @@ function CaptionBallot({ caption, number, frameId }: { caption: CaptionCard; num
       <div className={styles.captionActions} role="group" aria-label={`Use caption ${number}`}>
         <button type="button" disabled={sharing} onClick={() => void shareCaption(true)}>Copy caption</button>
         <button type="button" disabled={sharing} onClick={() => void shareCaption(false)}>Share caption <Arrow diagonal /></button>
+        {instagramPhoto && <InstagramShare photo={instagramPhoto} caption={caption.text} />}
         <span role="status" aria-live="polite">{shareFeedback}</span>
       </div>
     </div>
   );
 }
 
-function PhotoSet({ item, number, fresh }: { item: CaptionImage; number: number; fresh: boolean }) {
+type LatestUpload = { frameId: string; file: File };
+
+function PhotoSet({ item, number, fresh, selected = false, latestUpload }: {
+  item: CaptionImage; number: number; fresh: boolean; selected?: boolean; latestUpload: LatestUpload | null;
+}) {
+  const source = latestUpload?.frameId === item.id ? latestUpload.file : undefined;
+  const instagramPhoto = useMemo(() => item.ownedByMe ? createInstagramPhoto(item.id, source) : null, [item.ownedByMe, item.id, source]);
+  useEffect(() => {
+    if (selected && instagramPhoto) warmInstagramPhoto(instagramPhoto);
+  }, [selected, instagramPhoto]);
   const date = new Date(item.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
   return (
     <article className={`${styles.photoSet} ${fresh ? styles.freshFrame : ""}`} id={`frame-${item.id}`} tabIndex={-1} aria-label={`Photo ${number}, ${item.tone} captions`}>
@@ -116,7 +132,7 @@ function PhotoSet({ item, number, fresh }: { item: CaptionImage; number: number;
         <div className={styles.captionPanelHeading}><span className={styles.eyebrow}>ONE FRAME. THREE TAKES.</span><div className={styles.captionTags}><span className={styles.aiTag}>AI-written</span>{item.adminEditedAt && <span className={styles.editedTag}>Edited</span>}</div></div>
         <h3>Which one lands?</h3>
         {item.adminEditedAt && <p className={styles.editNote}>Edited by the club. Ratings may refer to earlier wording.</p>}
-        <div>{item.captions.map((caption, index) => <CaptionBallot key={`${caption.id}:${caption.upvotes}:${caption.downvotes}:${caption.myVote}`} caption={caption} number={index + 1} frameId={item.id} />)}</div>
+        <div>{item.captions.map((caption, index) => <CaptionBallot key={`${caption.id}:${caption.upvotes}:${caption.downvotes}:${caption.myVote}`} caption={caption} number={index + 1} frameId={item.id} instagramPhoto={instagramPhoto} />)}</div>
         <div className={styles.frameLink}><Link href={captionFrameHref(item.id)} prefetch={false}>Link to this frame <Arrow diagonal /></Link><span>Photo links open for signed-in members.</span></div>
         <details className={styles.description}><summary>What the AI noticed <span aria-hidden="true">+</span></summary><p>{item.description}</p></details>
       </div>
@@ -158,6 +174,7 @@ export default function CaptionStudio({ signedIn, generationConfigured, items, f
   const focusedFrame = useRef<string | null>(null);
   const photoSelection = useRef(0);
   const [photo, setPhoto] = useState<File | null>(null);
+  const [latestUpload, setLatestUpload] = useState<LatestUpload | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [photoError, setPhotoError] = useState("");
   const [converting, setConverting] = useState(false);
@@ -179,6 +196,7 @@ export default function CaptionStudio({ signedIn, generationConfigured, items, f
         clearPhoto();
         setPetPhotoRejection(next.error ?? "Only pet-related photos can be used to generate captions. Please choose a photo of your pet or pet-related items.");
       } else if (next.success) {
+        setLatestUpload(next.imageId ? { frameId: next.imageId, file: photo } : null);
         setPhoto(null);
         setPreview(null);
         setConverted(false);
@@ -365,11 +383,11 @@ export default function CaptionStudio({ signedIn, generationConfigured, items, f
         <div className={styles.galleryHeading}><div><p className={styles.eyebrow}>02 / THE CONTACT SHEET</p><h2 id="gallery-title">The frames.<br /><span>The funny business.</span></h2></div><div className={styles.galleryNote}><span aria-hidden="true">☺</span><p>Good one? Let them know.<br />Every caption gets its own vote.</p></div></div>
         {!signedIn && requestedFrameId && <div className={styles.sharedNotice} id={`frame-${requestedFrameId}`}><p>This frame is waiting inside the club. Sign in to see the photo and its captions.</p><Link href="/login" onClick={rememberSharedFrame} className={styles.textLink}>Sign in to view shared frame <Arrow /></Link><span>If this frame doesn’t reopen after sign-in, open the link again.</span></div>}
         {selectedFrameError && <p className={styles.feedError} role="status">{selectedFrameError}</p>}
-        {signedIn && selectedFrame && <section className={styles.selectedFrame} aria-label="Selected frame"><p className={styles.eyebrow}>{state.imageId === selectedFrame.id ? "YOUR NEW FRAME" : "THE FRAME YOU OPENED"}</p><PhotoSet item={selectedFrame} number={1} fresh={state.imageId === selectedFrame.id} /></section>}
+        {signedIn && selectedFrame && <section className={styles.selectedFrame} aria-label="Selected frame"><p className={styles.eyebrow}>{state.imageId === selectedFrame.id ? "YOUR NEW FRAME" : "THE FRAME YOU OPENED"}</p><PhotoSet item={selectedFrame} number={1} fresh={state.imageId === selectedFrame.id} selected latestUpload={latestUpload} /></section>}
         <div className={styles.galleryToolbar}><nav className={styles.filters} aria-label="Browse caption photos"><Link href={captionFeedHref("fresh")} prefetch={false} aria-current={mode === "fresh" ? "page" : undefined}>Fresh frames</Link>{signedIn && <><Link href={captionFeedHref("top")} prefetch={false} aria-current={mode === "top" ? "page" : undefined}>Top frames</Link><Link href={captionFeedHref("mine")} prefetch={false} aria-current={mode === "mine" ? "page" : undefined}>My frames</Link></>}</nav><span className={styles.galleryAccess}>{signedIn ? "MEMBERS’ CONTACT SHEET" : "A PEEK INSIDE THE CLUB"}</span></div>
         {signedIn && <p className={styles.feedExplanation}>{mode === "top" ? "Ranked by positive minus negative votes across each photo’s three captions. Newer frames break a tie." : mode === "mine" ? "Your own photo history, newest first. Come back to see how your captions land." : "The club’s newest photos, with a fresh chance to make someone laugh."}</p>}
         {feedError && signedIn && <p className={styles.feedError} role="alert">{feedError}</p>}
-        {signedIn && visibleItems.length > 0 ? <div className={styles.feed}>{visibleItems.map((item, index) => <PhotoSet item={item} key={item.id} number={(page - 1) * CAPTION_PAGE_SIZE + index + 1} fresh={state.imageId === item.id} />)}</div> : <>
+        {signedIn && visibleItems.length > 0 ? <div className={styles.feed}>{visibleItems.map((item, index) => <PhotoSet item={item} key={item.id} number={(page - 1) * CAPTION_PAGE_SIZE + index + 1} fresh={state.imageId === item.id} latestUpload={latestUpload} />)}</div> : <>
           {signedIn && (mode === "mine" || page > 1 || selectedFrame || feedError) ? <div className={styles.emptyState}><span aria-hidden="true">▧</span><h3>{feedError ? "A moment in the darkroom." : selectedFrame && items.length ? "You’re caught up on this page." : page > 1 ? "No more frames on this page." : "Your first frame is waiting."}</h3><p>{feedError ? "Your frames couldn’t load. Refresh the page to try again." : selectedFrame && items.length ? "The frame above is part of this page. Explore another view or add your own." : "Upload a photo and give the club something to smile about."}</p>{!feedError && <a className={styles.textLink} href="#caption-workbench">Make a frame <Arrow /></a>}</div> : <><div className={styles.exampleIntro}><p>{signedIn && !feedError ? "The contact sheet is ready for its first real frame." : "A little taste of what’s possible."}</p><span>{signedIn ? "Handwritten examples for inspiration. Your photos will appear here." : "These are handwritten examples. Sign in to generate and rate real captions."}</span></div><ExampleFrames /></>}
         </>}
         {signedIn && (page > 1 || hasMore) && <nav className={styles.pagination} aria-label="Caption gallery pages">{page > 1 ? <Link href={captionFeedHref(mode, page - 1)} prefetch={false}>← Previous page</Link> : <span />}<span>Page {page}</span>{hasMore ? <Link href={captionFeedHref(mode, page + 1)} prefetch={false}>Next page →</Link> : <span />}</nav>}
