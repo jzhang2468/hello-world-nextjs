@@ -2,7 +2,6 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import vm from "node:vm";
-import * as jsxRuntime from "react/jsx-runtime";
 import ts from "typescript";
 
 const source = readFileSync(new URL("../app/captions/instagram-share.tsx", import.meta.url), "utf8");
@@ -20,7 +19,7 @@ for (const mobile of [false, true]) {
     let controls = [];
     function capture(type, props) {
       if (type === "a" || type === "button") controls.push({ type, ...props });
-      return jsxRuntime.jsx(type, props);
+      return { type, props };
     }
     const modules = {
       react: { useState(initial) {
@@ -28,7 +27,7 @@ for (const mobile of [false, true]) {
         state[index] ??= initial;
         return [state[index], (value) => { state[index] = value; }];
       } },
-      "react/jsx-runtime": { ...jsxRuntime, jsx: capture, jsxs: capture },
+      "react/jsx-runtime": { Fragment: Symbol("Fragment"), jsx: capture, jsxs: capture },
       "./captions.module.css": { default: {} },
     };
     const exports = {};
